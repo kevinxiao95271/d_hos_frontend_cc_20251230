@@ -3,7 +3,7 @@
     <el-container>
       <el-aside width="200px" class="layout-aside">
         <div class="logo">
-          <h1>医疗质控系统</h1>
+          <h1>高质量医疗指标管理系统</h1>
         </div>
         <el-menu
           :default-active="activeMenu"

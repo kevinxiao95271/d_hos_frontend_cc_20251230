@@ -76,7 +76,7 @@
             </div>
           </template>
           <div class="system-info">
-            <p><strong>医疗质量控制指标管理系统</strong></p>
+            <p><strong>高质量医疗指标管理系统</strong></p>
             <p>本系统提供以下功能:</p>
             <ul>
               <li>数据录入与校验 - 录入病历数据并进行规则引擎校验</li>
