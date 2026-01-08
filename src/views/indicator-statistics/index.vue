@@ -326,95 +326,94 @@ const loadResults = async () => {
       return
     }
 
-    // 3. 先获取所有指标项的值
+    ElMessage.info(`正在查询 ${leafMetrics.length} 个指标的历史结果...`)
+
+    // 3. 查询已存在的计算结果
+    const existingResults = await indicatorResultApi.getResults({
+      timeDimension: queryForm.value.timeDimension,
+      startDate: dateRange.value[0],
+      endDate: dateRange.value[1]
+    })
+
+    // 4. 将查询结果转换为Map，方便查找
+    const resultsMap = {}
+    if (existingResults && Array.isArray(existingResults)) {
+      existingResults.forEach(item => {
+        resultsMap[item.metricCode] = item
+      })
+    }
+
+    // 5. 获取所有指标项信息（用于显示来源指标项）
     const indicatorItems = await indicatorItemApi.getList()
-    const itemDataMap = {}
 
-    ElMessage.info(`正在计算 ${leafMetrics.length} 个指标，请稍候...`)
-
-    // 4. 批量计算所有指标
+    // 6. 构建展示数据
     const results = {}
-    let successCount = 0
-    let failCount = 0
+    let foundCount = 0
+    let notFoundCount = 0
 
     for (const metric of leafMetrics) {
-      try {
-        const result = await indicatorResultApi.calculate({
-          metricCode: metric.metricCode,
-          timeDimension: queryForm.value.timeDimension,
-          startDate: dateRange.value[0],
-          endDate: dateRange.value[1]
-        }, { hideErrorMessage: true }) // 批量计算时不显示错误弹窗
+      const existingResult = resultsMap[metric.metricCode]
 
-        // 解析依赖的指标项
+      if (existingResult && existingResult.resultValue !== null && existingResult.resultValue !== undefined) {
+        // 找到已存在的计算结果，直接使用
         const relatedItems = metric.relatedItems ? JSON.parse(metric.relatedItems) : []
         const sourceItems = []
 
-        // 对于每个依赖的指标项,获取其详细信息和值
-        for (const itemCode of relatedItems) {
-          // 从指标项列表中找到对应的指标项信息
-          const itemInfo = indicatorItems.find(item => item.itemCode === itemCode)
-
-          // 如果还没有获取过这个指标项的值,就去获取
-          if (itemDataMap[itemCode] === undefined) {
-            try {
-              const itemValue = await indicatorItemApi.execute(itemCode, {
-                startDate: dateRange.value[0],
-                endDate: dateRange.value[1]
-              }, { hideErrorMessage: true }) // 批量计算时不显示错误弹窗
-              // 从后端返回的嵌套结构中提取真实值: { result: { result_value: 2 } }
-              let itemResultValue = itemValue?.result?.result_value
-              // 防异常处理: null、undefined、NaN都转为0
-              if (itemResultValue === null || itemResultValue === undefined || isNaN(itemResultValue)) {
-                itemResultValue = 0
-              }
-              itemDataMap[itemCode] = itemResultValue
-            } catch (error) {
-              console.error(`Failed to execute item ${itemCode}:`, error)
-              itemDataMap[itemCode] = 0 // 错误时也设置为0而不是null
-            }
+        // 解析resultJson获取来源指标项的值
+        let itemValues = {}
+        if (existingResult.resultJson) {
+          try {
+            const jsonData = JSON.parse(existingResult.resultJson)
+            itemValues = jsonData.item_values || {}
+          } catch (e) {
+            console.error(`Failed to parse resultJson for ${metric.metricCode}:`, e)
           }
+        }
 
+        // 构建来源指标项数据
+        for (const itemCode of relatedItems) {
+          const itemInfo = indicatorItems.find(item => item.itemCode === itemCode)
           if (itemInfo) {
             sourceItems.push({
               itemCode,
               itemName: itemInfo.itemName,
-              value: itemDataMap[itemCode],
+              value: itemValues[itemCode] !== undefined ? itemValues[itemCode] : 0,
               unit: itemInfo.unit
             })
           }
         }
 
-        // 获取结果值,处理NaN情况
-        // 后端返回结构: { resultValue: 2, resultJson: "..." }
-        let finalValue = result.resultValue !== undefined ? result.resultValue : (result.value !== undefined ? result.value : result)
-        // 0除以0的结果是NaN,处理为0,不报错
+        // 处理结果值
+        let finalValue = existingResult.resultValue
         if (finalValue === null || finalValue === undefined || isNaN(finalValue)) {
           finalValue = 0
         }
 
-        // 存储指标计算结果和来源数据
         results[metric.metricCode] = {
           value: finalValue,
           sourceItems
         }
-        successCount++
-      } catch (error) {
-        console.error(`Failed to calculate ${metric.metricCode}:`, error)
-        // 保存错误信息到结果中
+        foundCount++
+      } else {
+        // 没有找到计算结果
         results[metric.metricCode] = {
           value: null,
           sourceItems: [],
-          error: error.message || error.toString() || '计算失败'
+          error: '暂无计算结果，请先在"指标计算"页面进行计算'
         }
-        failCount++
+        notFoundCount++
       }
     }
 
     calculatedResults.value = results
-    ElMessage.success(`加载完成! 成功: ${successCount}, 失败: ${failCount}`)
+
+    if (notFoundCount > 0) {
+      ElMessage.warning(`查询完成! 已有结果: ${foundCount}个, 未计算: ${notFoundCount}个`)
+    } else {
+      ElMessage.success(`查询完成! 共找到 ${foundCount} 个指标结果`)
+    }
   } catch (error) {
-    ElMessage.error('加载失败: ' + (error.message || '未知错误'))
+    ElMessage.error('查询失败: ' + (error.message || '未知错误'))
     console.error(error)
   } finally {
     loading.value = false
