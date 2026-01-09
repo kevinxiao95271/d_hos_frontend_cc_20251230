@@ -364,7 +364,8 @@ const openDialog = (node = null) => {
     formData.relatedItems = node.relatedItems || ''
     formData.unit = node.unit || ''
     formData.supportDeptDrill = node.supportDeptDrill || 0
-    formData.displayOrder = node.displayOrder || 0
+    // 后端使用 sortOrder，前端使用 displayOrder
+    formData.displayOrder = node.sortOrder || node.displayOrder || 0
   }
 
   dialogVisible.value = true
@@ -390,7 +391,9 @@ const submitForm = async () => {
         relatedItems: formData.isLeaf === 1 && formData.calculationType === 'EXPRESSION' ? formData.relatedItems : null,
         unit: formData.unit || null,
         supportDeptDrill: formData.supportDeptDrill,
-        displayOrder: formData.displayOrder
+        // 后端使用 sortOrder，前端使用 displayOrder
+        sortOrder: formData.displayOrder,
+        status: 1
       }
 
       if (formData.id) {

@@ -312,7 +312,8 @@ const openDialog = (row = null) => {
     formData.dataSource = row.dataSource || ''
     formData.unit = row.unit || ''
     formData.querySql = row.querySql || ''
-    formData.description = row.description || ''
+    // 后端使用 remark，前端使用 description
+    formData.description = row.remark || row.description || ''
   }
 
   dialogVisible.value = true
@@ -333,7 +334,9 @@ const submitForm = async () => {
         dataSource: formData.dataSource,
         unit: formData.unit || null,
         querySql: formData.querySql,
-        description: formData.description || null
+        // 后端使用 remark，前端使用 description
+        remark: formData.description || null,
+        status: 1
       }
 
       if (formData.id) {
