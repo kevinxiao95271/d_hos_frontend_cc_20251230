@@ -181,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { indicatorItemApi } from '@/api'
 
@@ -212,6 +212,14 @@ const formData = reactive({
   unit: '',
   querySql: '',
   description: ''
+})
+
+// 监听指标项名称变化，自动同步到指标项编码（仅新增模式）
+watch(() => formData.itemName, (newName) => {
+  // 只在新增模式下自动同步
+  if (!formData.id && newName) {
+    formData.itemCode = newName
+  }
 })
 
 const formRules = {

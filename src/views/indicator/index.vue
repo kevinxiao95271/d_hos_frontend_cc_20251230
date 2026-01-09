@@ -247,7 +247,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { indicatorApi } from '@/api'
 
@@ -278,6 +278,14 @@ const formData = reactive({
   unit: '',
   supportDeptDrill: 0,
   displayOrder: 0
+})
+
+// 监听指标名称变化，自动同步到指标编码（仅新增模式）
+watch(() => formData.metricName, (newName) => {
+  // 只在新增模式下自动同步
+  if (!formData.id && newName) {
+    formData.metricCode = newName
+  }
 })
 
 const formRules = {
