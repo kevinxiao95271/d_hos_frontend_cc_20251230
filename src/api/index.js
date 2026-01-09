@@ -9,6 +9,23 @@ export const indicatorItemApi = {
     })
   },
 
+  // 获取指标项分页列表
+  getPage(params) {
+    return request({
+      url: '/api/indicator-item/page',
+      method: 'get',
+      params
+    })
+  },
+
+  // 获取指标项详情
+  getDetail(id) {
+    return request({
+      url: `/api/indicator-item/${id}`,
+      method: 'get'
+    })
+  },
+
   // 执行指标项
   execute(itemCode, params, config = {}) {
     return request({
@@ -22,7 +39,7 @@ export const indicatorItemApi = {
   // 创建指标项
   create(data) {
     return request({
-      url: '/api/indicator-item/create',
+      url: '/api/indicator-item',
       method: 'post',
       data
     })
@@ -55,19 +72,35 @@ export const indicatorApi = {
     })
   },
 
-  // 获取指标列表
-  getList(params) {
+  // 获取指标列表（支持分页）
+  getPage(params) {
     return request({
-      url: '/api/indicator/list',
+      url: '/api/indicator/page',
       method: 'get',
       params
+    })
+  },
+
+  // 获取指标详情
+  getDetail(id) {
+    return request({
+      url: `/api/indicator/${id}`,
+      method: 'get'
+    })
+  },
+
+  // 获取子节点
+  getChildren(parentCode) {
+    return request({
+      url: `/api/indicator/children/${parentCode}`,
+      method: 'get'
     })
   },
 
   // 创建指标
   create(data) {
     return request({
-      url: '/api/indicator/create',
+      url: '/api/indicator',
       method: 'post',
       data
     })

@@ -99,21 +99,11 @@
                 {{ selectedNode.supportDeptDrill === 1 ? '是' : '否' }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="计算表达式" :span="2" v-if="selectedNode.expression">
-              <el-input
-                v-model="selectedNode.expression"
-                readonly
-                style="font-family: 'Courier New', monospace;"
-              />
+            <el-descriptions-item label="显示顺序">
+              {{ selectedNode.displayOrder || '-' }}
             </el-descriptions-item>
-            <el-descriptions-item label="关联指标项" :span="2" v-if="selectedNode.relatedItems">
-              <el-tag
-                v-for="item in parseRelatedItems(selectedNode.relatedItems)"
-                :key="item"
-                style="margin-right: 8px;"
-              >
-                {{ item }}
-              </el-tag>
+            <el-descriptions-item label="父节点编码" v-if="selectedNode.parentCode">
+              {{ selectedNode.parentCode }}
             </el-descriptions-item>
           </el-descriptions>
 
@@ -152,22 +142,165 @@
         <el-empty v-else description="请在左侧选择一个指标节点" />
       </el-col>
     </el-row>
+
+    <!-- 新增/编辑对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="700px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="120px"
+      >
+        <el-form-item label="父节点" prop="parentCode">
+          <el-tree-select
+            v-model="formData.parentCode"
+            :data="treeData"
+            :props="treeProps"
+            check-strictly
+            placeholder="选择父节点（不选则为根节点）"
+            style="width: 100%;"
+            clearable
+          />
+        </el-form-item>
+
+        <el-form-item label="指标编码" prop="metricCode">
+          <el-input v-model="formData.metricCode" placeholder="请输入指标编码" />
+        </el-form-item>
+
+        <el-form-item label="指标名称" prop="metricName">
+          <el-input v-model="formData.metricName" placeholder="请输入指标名称" />
+        </el-form-item>
+
+        <el-form-item label="层级" prop="indicatorLevel">
+          <el-input-number v-model="formData.indicatorLevel" :min="1" :max="5" />
+        </el-form-item>
+
+        <el-form-item label="是否末级" prop="isLeaf">
+          <el-radio-group v-model="formData.isLeaf">
+            <el-radio :label="1">是</el-radio>
+            <el-radio :label="0">否</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="指标类型" prop="metricType">
+          <el-select v-model="formData.metricType" placeholder="请选择">
+            <el-option label="定量" value="QUANTITATIVE" />
+            <el-option label="定性" value="QUALITATIVE" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="计算类型" prop="calculationType" v-if="formData.isLeaf === 1">
+          <el-select v-model="formData.calculationType" placeholder="请选择">
+            <el-option label="表达式" value="EXPRESSION" />
+            <el-option label="指标项" value="ITEM" />
+            <el-option label="无" value="NONE" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="计算表达式" prop="expression" v-if="formData.isLeaf === 1 && formData.calculationType !== 'NONE'">
+          <el-input
+            v-model="formData.expression"
+            type="textarea"
+            :rows="3"
+            placeholder="例如: a0046/a0041 或 指标项编码"
+          />
+        </el-form-item>
+
+        <el-form-item label="依赖指标项" prop="relatedItems" v-if="formData.isLeaf === 1 && formData.calculationType === 'EXPRESSION'">
+          <el-input
+            v-model="formData.relatedItems"
+            type="textarea"
+            :rows="2"
+            placeholder='JSON数组格式，例如: ["a0041","a0046"]'
+          />
+        </el-form-item>
+
+        <el-form-item label="单位" prop="unit">
+          <el-input v-model="formData.unit" placeholder="例如: 元、天、%" />
+        </el-form-item>
+
+        <el-form-item label="支持科室下钻" prop="supportDeptDrill">
+          <el-radio-group v-model="formData.supportDeptDrill">
+            <el-radio :label="1">是</el-radio>
+            <el-radio :label="0">否</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="显示顺序" prop="displayOrder">
+          <el-input-number v-model="formData.displayOrder" :min="0" />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { indicatorApi } from '@/api'
 
 const loading = ref(false)
 const treeData = ref([])
 const selectedNode = ref(null)
+const dialogVisible = ref(false)
+const submitLoading = ref(false)
+const formRef = ref(null)
 
 const treeProps = {
   children: 'children',
-  label: 'metricName'
+  label: 'metricName',
+  value: 'metricCode'
 }
+
+const formData = reactive({
+  id: null,
+  parentCode: '',
+  metricCode: '',
+  metricName: '',
+  indicatorLevel: 1,
+  isLeaf: 0,
+  metricType: 'QUANTITATIVE',
+  calculationType: 'NONE',
+  expression: '',
+  relatedItems: '',
+  unit: '',
+  supportDeptDrill: 0,
+  displayOrder: 0
+})
+
+const formRules = {
+  metricCode: [
+    { required: true, message: '请输入指标编码', trigger: 'blur' }
+  ],
+  metricName: [
+    { required: true, message: '请输入指标名称', trigger: 'blur' }
+  ],
+  indicatorLevel: [
+    { required: true, message: '请选择层级', trigger: 'change' }
+  ],
+  isLeaf: [
+    { required: true, message: '请选择是否末级', trigger: 'change' }
+  ],
+  metricType: [
+    { required: true, message: '请选择指标类型', trigger: 'change' }
+  ]
+}
+
+const dialogTitle = computed(() => {
+  return formData.id ? '编辑指标' : '新增指标'
+})
 
 const loadTree = async () => {
   loading.value = true
@@ -194,21 +327,112 @@ const parseRelatedItems = (items) => {
   }
 }
 
+const resetForm = () => {
+  formData.id = null
+  formData.parentCode = ''
+  formData.metricCode = ''
+  formData.metricName = ''
+  formData.indicatorLevel = 1
+  formData.isLeaf = 0
+  formData.metricType = 'QUANTITATIVE'
+  formData.calculationType = 'NONE'
+  formData.expression = ''
+  formData.relatedItems = ''
+  formData.unit = ''
+  formData.supportDeptDrill = 0
+  formData.displayOrder = 0
+
+  if (formRef.value) {
+    formRef.value.clearValidate()
+  }
+}
+
 const openDialog = (node = null) => {
-  ElMessage.info('新增/编辑功能开发中')
+  resetForm()
+
+  if (node) {
+    // 编辑模式
+    formData.id = node.id
+    formData.parentCode = node.parentCode || ''
+    formData.metricCode = node.metricCode
+    formData.metricName = node.metricName
+    formData.indicatorLevel = node.indicatorLevel
+    formData.isLeaf = node.isLeaf
+    formData.metricType = node.metricType
+    formData.calculationType = node.calculationType || 'NONE'
+    formData.expression = node.expression || ''
+    formData.relatedItems = node.relatedItems || ''
+    formData.unit = node.unit || ''
+    formData.supportDeptDrill = node.supportDeptDrill || 0
+    formData.displayOrder = node.displayOrder || 0
+  }
+
+  dialogVisible.value = true
+}
+
+const submitForm = async () => {
+  if (!formRef.value) return
+
+  await formRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    submitLoading.value = true
+    try {
+      const data = {
+        parentCode: formData.parentCode || null,
+        metricCode: formData.metricCode,
+        metricName: formData.metricName,
+        indicatorLevel: formData.indicatorLevel,
+        isLeaf: formData.isLeaf,
+        metricType: formData.metricType,
+        calculationType: formData.isLeaf === 1 ? formData.calculationType : 'NONE',
+        expression: formData.isLeaf === 1 ? formData.expression : null,
+        relatedItems: formData.isLeaf === 1 && formData.calculationType === 'EXPRESSION' ? formData.relatedItems : null,
+        unit: formData.unit || null,
+        supportDeptDrill: formData.supportDeptDrill,
+        displayOrder: formData.displayOrder
+      }
+
+      if (formData.id) {
+        // 更新
+        await indicatorApi.update(formData.id, data)
+        ElMessage.success('更新成功')
+      } else {
+        // 新增
+        await indicatorApi.create(data)
+        ElMessage.success('新增成功')
+      }
+
+      dialogVisible.value = false
+      await loadTree()
+    } catch (error) {
+      ElMessage.error(error.message || '操作失败')
+    } finally {
+      submitLoading.value = false
+    }
+  })
 }
 
 const deleteNode = () => {
+  if (!selectedNode.value) return
+
   ElMessageBox.confirm(
-    '确定要删除此指标吗?',
+    `确定要删除指标"${selectedNode.value.metricName}"吗？`,
     '警告',
     {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
     }
-  ).then(() => {
-    ElMessage.success('删除成功')
+  ).then(async () => {
+    try {
+      await indicatorApi.delete(selectedNode.value.id)
+      ElMessage.success('删除成功')
+      selectedNode.value = null
+      await loadTree()
+    } catch (error) {
+      ElMessage.error(error.message || '删除失败')
+    }
   })
 }
 

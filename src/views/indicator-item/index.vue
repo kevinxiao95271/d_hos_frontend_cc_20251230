@@ -35,7 +35,7 @@
         </el-table-column>
         <el-table-column prop="dataSource" label="数据源" width="150" />
         <el-table-column prop="unit" label="单位" width="80" />
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewSql(row)">
               <el-icon><View /></el-icon>
@@ -49,11 +49,16 @@
               <el-icon><Edit /></el-icon>
               编辑
             </el-button>
+            <el-button link type="danger" @click="deleteItem(row)">
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
+    <!-- 查看SQL对话框 -->
     <el-dialog
       v-model="sqlVisible"
       :title="`${currentItem?.itemName} - SQL语句`"
@@ -68,6 +73,7 @@
       />
     </el-dialog>
 
+    <!-- 测试执行对话框 -->
     <el-dialog
       v-model="testVisible"
       title="测试执行"
@@ -104,12 +110,79 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 新增/编辑对话框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="120px"
+      >
+        <el-form-item label="指标项编码" prop="itemCode">
+          <el-input v-model="formData.itemCode" placeholder="请输入指标项编码，例如: a0041" />
+        </el-form-item>
+
+        <el-form-item label="指标项名称" prop="itemName">
+          <el-input v-model="formData.itemName" placeholder="请输入指标项名称" />
+        </el-form-item>
+
+        <el-form-item label="指标项类型" prop="itemType">
+          <el-select v-model="formData.itemType" placeholder="请选择">
+            <el-option label="采集" value="COLLECTED" />
+            <el-option label="计算" value="CALCULATED" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="数据源" prop="dataSource">
+          <el-input v-model="formData.dataSource" placeholder="例如: D_MR" />
+        </el-form-item>
+
+        <el-form-item label="单位" prop="unit">
+          <el-input v-model="formData.unit" placeholder="例如: 人、元、天" />
+        </el-form-item>
+
+        <el-form-item label="查询SQL" prop="querySql">
+          <el-input
+            v-model="formData.querySql"
+            type="textarea"
+            :rows="10"
+            placeholder="请输入SQL查询语句，使用 :startDate 和 :endDate 作为参数占位符"
+            style="font-family: 'Courier New', monospace;"
+          />
+          <div style="margin-top: 8px; color: #999; font-size: 12px;">
+            <p>示例: SELECT COUNT(*) FROM D_MR WHERE B15 BETWEEN :startDate AND :endDate</p>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="备注" prop="description">
+          <el-input
+            v-model="formData.description"
+            type="textarea"
+            :rows="3"
+            placeholder="可选，填写指标项说明"
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { indicatorItemApi } from '@/api'
 
 const loading = ref(false)
@@ -124,6 +197,43 @@ const testResult = ref(null)
 const testParams = ref({
   startDate: '2023-01-01',
   endDate: '2023-12-31'
+})
+
+const dialogVisible = ref(false)
+const submitLoading = ref(false)
+const formRef = ref(null)
+
+const formData = reactive({
+  id: null,
+  itemCode: '',
+  itemName: '',
+  itemType: 'COLLECTED',
+  dataSource: '',
+  unit: '',
+  querySql: '',
+  description: ''
+})
+
+const formRules = {
+  itemCode: [
+    { required: true, message: '请输入指标项编码', trigger: 'blur' }
+  ],
+  itemName: [
+    { required: true, message: '请输入指标项名称', trigger: 'blur' }
+  ],
+  itemType: [
+    { required: true, message: '请选择指标项类型', trigger: 'change' }
+  ],
+  dataSource: [
+    { required: true, message: '请输入数据源', trigger: 'blur' }
+  ],
+  querySql: [
+    { required: true, message: '请输入查询SQL', trigger: 'blur' }
+  ]
+}
+
+const dialogTitle = computed(() => {
+  return formData.id ? '编辑指标项' : '新增指标项'
 })
 
 const filteredItems = computed(() => {
@@ -175,8 +285,95 @@ const executeTest = async () => {
   }
 }
 
+const resetForm = () => {
+  formData.id = null
+  formData.itemCode = ''
+  formData.itemName = ''
+  formData.itemType = 'COLLECTED'
+  formData.dataSource = ''
+  formData.unit = ''
+  formData.querySql = ''
+  formData.description = ''
+
+  if (formRef.value) {
+    formRef.value.clearValidate()
+  }
+}
+
 const openDialog = (row = null) => {
-  ElMessage.info('新增/编辑功能开发中')
+  resetForm()
+
+  if (row) {
+    // 编辑模式
+    formData.id = row.id
+    formData.itemCode = row.itemCode
+    formData.itemName = row.itemName
+    formData.itemType = row.itemType
+    formData.dataSource = row.dataSource || ''
+    formData.unit = row.unit || ''
+    formData.querySql = row.querySql || ''
+    formData.description = row.description || ''
+  }
+
+  dialogVisible.value = true
+}
+
+const submitForm = async () => {
+  if (!formRef.value) return
+
+  await formRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    submitLoading.value = true
+    try {
+      const data = {
+        itemCode: formData.itemCode,
+        itemName: formData.itemName,
+        itemType: formData.itemType,
+        dataSource: formData.dataSource,
+        unit: formData.unit || null,
+        querySql: formData.querySql,
+        description: formData.description || null
+      }
+
+      if (formData.id) {
+        // 更新
+        await indicatorItemApi.update(formData.id, data)
+        ElMessage.success('更新成功')
+      } else {
+        // 新增
+        await indicatorItemApi.create(data)
+        ElMessage.success('新增成功')
+      }
+
+      dialogVisible.value = false
+      await loadItems()
+    } catch (error) {
+      ElMessage.error(error.message || '操作失败')
+    } finally {
+      submitLoading.value = false
+    }
+  })
+}
+
+const deleteItem = (row) => {
+  ElMessageBox.confirm(
+    `确定要删除指标项"${row.itemName}"吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(async () => {
+    try {
+      await indicatorItemApi.delete(row.id)
+      ElMessage.success('删除成功')
+      await loadItems()
+    } catch (error) {
+      ElMessage.error(error.message || '删除失败')
+    }
+  })
 }
 
 onMounted(() => {
