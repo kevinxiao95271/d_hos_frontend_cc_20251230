@@ -6,36 +6,77 @@
     </div>
 
     <el-card style="margin-bottom: 20px;">
-      <el-form :inline="true" :model="queryForm">
-        <el-form-item label="时间维度">
-          <el-select v-model="queryForm.timeDimension" placeholder="请选择" @change="handleDimensionChange">
-            <el-option label="按年" value="YEAR" />
-            <el-option label="按月" value="MONTH" />
-            <el-option label="按日" value="DAY" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="timePickerLabel">
-          <el-date-picker
-            v-model="timeValue"
-            :type="timePickerType"
-            :placeholder="timePickerPlaceholder"
-            :value-format="timeValueFormat"
-            @change="handleTimeChange"
-          />
-          <span style="margin-left: 8px; color: #999; font-size: 12px;">
-            范围: {{ dateRange[0] }} 至 {{ dateRange[1] }}
-          </span>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadResults" :loading="loading">
-            <el-icon><Search /></el-icon>
-            查询
-          </el-button>
-          <el-button @click="exportResults">
-            <el-icon><Download /></el-icon>
-            导出
-          </el-button>
-        </el-form-item>
+      <el-form :model="queryForm">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="时间维度" label-width="100px">
+              <el-radio-group v-model="queryForm.timeDimension" @change="handleDimensionChange">
+                <el-radio label="YEAR">按年</el-radio>
+                <el-radio label="MONTH">按月</el-radio>
+                <el-radio label="DAY">按日</el-radio>
+                <el-radio label="CUSTOM">自定义范围</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" v-if="queryForm.timeDimension !== 'CUSTOM'">
+          <el-col :span="12">
+            <el-form-item :label="timePickerLabel" label-width="100px">
+              <el-date-picker
+                v-model="timeValue"
+                :type="timePickerType"
+                :placeholder="timePickerPlaceholder"
+                style="width: 100%"
+                :value-format="timeValueFormat"
+                @change="handleTimeChange"
+              />
+              <div style="margin-top: 4px; color: #999; font-size: 12px;">
+                查询范围: {{ dateRange[0] }} 至 {{ dateRange[1] }}
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" v-if="queryForm.timeDimension === 'CUSTOM'">
+          <el-col :span="12">
+            <el-form-item label="开始日期" label-width="100px">
+              <el-date-picker
+                v-model="dateRange[0]"
+                type="date"
+                placeholder="选择开始日期"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="结束日期" label-width="100px">
+              <el-date-picker
+                v-model="dateRange[1]"
+                type="date"
+                placeholder="选择结束日期"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label-width="100px">
+              <el-button type="primary" @click="loadResults" :loading="loading">
+                <el-icon><Search /></el-icon>
+                查询
+              </el-button>
+              <el-button @click="exportResults">
+                <el-icon><Download /></el-icon>
+                导出
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
     </el-card>
 
@@ -290,6 +331,9 @@ const handleDimensionChange = () => {
       timeValue.value = '2023-01-01'
       dateRange.value = ['2023-01-01', '2023-01-01']
       break
+    case 'CUSTOM':
+      dateRange.value = ['2023-01-01', '2023-12-31']
+      break
   }
 }
 
@@ -541,6 +585,10 @@ const openDeptDrill = async (metric) => {
         break
       case 'DAY':
         // 使用完整日期 2023-01-01
+        timeValueParam = dateRange.value[0]
+        break
+      case 'CUSTOM':
+        // 自定义范围: 使用开始日期
         timeValueParam = dateRange.value[0]
         break
     }
