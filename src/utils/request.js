@@ -2,7 +2,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const service = axios.create({
-  baseURL: import.meta.env.PROD ? 'http://81.71.44.180:8080/dgear' : '/dgear',
+  baseURL: '/dgear',
   timeout: 30000
 })
 
