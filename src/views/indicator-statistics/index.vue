@@ -546,11 +546,13 @@ const openDeptDrill = async (metric) => {
     }
 
     // 查询科室下钻结果(已在指标计算时执行过)
-    const deptData = await indicatorResultApi.getDeptDrillResults({
-      metricCode: metric.metricCode,
-      timeDimension: queryForm.value.timeDimension,
-      timeValue: timeValueParam
-    })
+    const deptData = await indicatorResultApi.getDeptDrillResults(
+      metric.metricCode,
+      {
+        timeDimension: queryForm.value.timeDimension,
+        timeValue: timeValueParam
+      }
+    )
 
     // 如果后端返回了数据,使用后端数据
     if (deptData && Array.isArray(deptData) && deptData.length > 0) {

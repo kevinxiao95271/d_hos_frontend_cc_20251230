@@ -154,18 +154,18 @@ export const indicatorResultApi = {
   },
 
   // 执行科室下钻计算
-  executeDeptDrill(data) {
+  executeDeptDrill(params) {
     return request({
-      url: '/api/indicator-calculation/dept-drill',
+      url: '/api/indicator-result/dept-drill-down',
       method: 'post',
-      data
+      params
     })
   },
 
   // 获取科室下钻结果
-  getDeptDrillResults(params) {
+  getDeptDrillResults(metricCode, params) {
     return request({
-      url: '/api/indicator-calculation/dept-drill-results',
+      url: `/api/indicator-result/dept-drill/${metricCode}`,
       method: 'get',
       params
     })
