@@ -11,10 +11,16 @@
           <template #header>
             <div class="card-header">
               <span>指标树</span>
-              <el-button type="primary" size="small" @click="openDialog()">
-                <el-icon><Plus /></el-icon>
-                新增
-              </el-button>
+              <div>
+                <el-button type="success" size="small" @click="loadTree(true)" :loading="loading">
+                  <el-icon><Refresh /></el-icon>
+                  刷新
+                </el-button>
+                <el-button type="primary" size="small" @click="openDialog()">
+                  <el-icon><Plus /></el-icon>
+                  新增
+                </el-button>
+              </div>
             </div>
           </template>
 
@@ -351,11 +357,14 @@ const dialogTitle = computed(() => {
   return formData.id ? '编辑指标' : '新增指标'
 })
 
-const loadTree = async () => {
+const loadTree = async (showMessage = false) => {
   loading.value = true
   try {
     const data = await indicatorApi.getTree()
     treeData.value = data
+    if (showMessage) {
+      ElMessage.success('刷新成功')
+    }
   } catch (error) {
     ElMessage.error('加载指标树失败')
   } finally {
