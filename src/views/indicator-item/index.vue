@@ -159,11 +159,29 @@
             v-model="formData.querySql"
             type="textarea"
             :rows="10"
-            placeholder="请输入SQL查询语句，使用 :startDate 和 :endDate 作为参数占位符"
+            placeholder="请输入SQL查询语句"
             style="font-family: 'Courier New', monospace;"
           />
-          <div style="margin-top: 8px; color: #999; font-size: 12px;">
-            <p>示例: SELECT COUNT(*) FROM D_MR WHERE B15 BETWEEN :startDate AND :endDate</p>
+          <div style="margin-top: 8px; color: #606266; font-size: 12px; line-height: 1.8;">
+            <p style="margin: 4px 0; font-weight: 600; color: #409EFF;">📌 重要说明:</p>
+            <p style="margin: 4px 0;">
+              <strong>1. 时间过滤条件:</strong> 为了时间选择的上下贯通逻辑,SQL结尾必须加上时间过滤条件:<br/>
+              <code style="background: #f5f7fa; padding: 2px 6px; border-radius: 3px;">
+                STR_TO_DATE(字段名, '%Y/%m/%d') BETWEEN #{startDate} AND #{endDate}
+              </code>
+            </p>
+            <p style="margin: 4px 0;">
+              <strong>2. 科室下钻别名:</strong> 支持科室下钻的SQL,<span style="color: #F56C6C;">必须</span>给聚合函数添加别名 <code style="background: #f5f7fa; padding: 2px 6px; border-radius: 3px;">AS result_value</code><br/>
+              例如: <code style="background: #f5f7fa; padding: 2px 6px; border-radius: 3px;">SELECT COUNT(*) AS result_value FROM ...</code><br/>
+              <span style="color: #E6A23C;">⚠️ 若缺少别名,科室下钻时程序将无法识别返回值,导致无下钻结果</span>
+            </p>
+            <p style="margin: 8px 0 4px 0; color: #67C23A;">✅ 完整示例:</p>
+            <p style="margin: 4px 0; background: #f5f7fa; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 11px;">
+              SELECT COUNT(DISTINCT A48, A49) AS result_value<br/>
+              FROM d_mr<br/>
+              WHERE A14 >= 18<br/>
+              AND STR_TO_DATE(B15, '%Y/%m/%d') BETWEEN #{startDate} AND #{endDate}
+            </p>
           </div>
         </el-form-item>
 
