@@ -163,14 +163,11 @@ export const indicatorResultApi = {
   },
 
   // 获取科室下钻结果
-  getDeptDrillResults(metricCode, params) {
+  getDeptDrillResults(params) {
     return request({
       url: '/api/indicator-calculation/dept-drill-results',
       method: 'get',
-      params: {
-        metricCode,
-        ...params
-      }
+      params
     })
   },
 

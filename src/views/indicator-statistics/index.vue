@@ -528,25 +528,29 @@ const openDeptDrill = async (metric) => {
   deptDrillError.value = '' // 清空之前的错误
 
   try {
-    // 步骤1: 先执行科室下钻计算
-    ElMessage.info('正在执行科室下钻计算...')
+    // 根据时间维度计算timeValue
+    let timeValueParam = ''
+    switch (queryForm.value.timeDimension) {
+      case 'YEAR':
+        // 从 2023-01-01 提取 2023
+        timeValueParam = dateRange.value[0].substring(0, 4)
+        break
+      case 'MONTH':
+        // 从 2023-01-01 提取 2023-01
+        timeValueParam = dateRange.value[0].substring(0, 7)
+        break
+      case 'DAY':
+        // 使用完整日期 2023-01-01
+        timeValueParam = dateRange.value[0]
+        break
+    }
 
-    await indicatorResultApi.executeDeptDrill({
+    // 查询科室下钻结果(已在指标计算时执行过)
+    const deptData = await indicatorResultApi.getDeptDrillResults({
       metricCode: metric.metricCode,
       timeDimension: queryForm.value.timeDimension,
-      startDate: dateRange.value[0],
-      endDate: dateRange.value[1]
+      timeValue: timeValueParam
     })
-
-    // 步骤2: 查询科室下钻结果
-    const deptData = await indicatorResultApi.getDeptDrillResults(
-      metric.metricCode,
-      {
-        timeDimension: queryForm.value.timeDimension,
-        startDate: dateRange.value[0],
-        endDate: dateRange.value[1]
-      }
-    )
 
     // 如果后端返回了数据,使用后端数据
     if (deptData && Array.isArray(deptData) && deptData.length > 0) {
@@ -575,11 +579,11 @@ const openDeptDrill = async (metric) => {
         }
       })
       deptDrillError.value = ''
-      ElMessage.success(`科室下钻完成,共 ${deptData.length} 个科室`)
+      ElMessage.success(`查询成功,共 ${deptData.length} 个科室`)
     } else {
       // 如果后端没有数据,显示提示
       deptDrillData.value = []
-      ElMessage.warning('暂无科室下钻数据')
+      deptDrillError.value = '暂无科室下钻数据,请先在"指标计算"页面执行计算'
     }
   } catch (error) {
     console.error('Failed to load dept drill down data:', error)
@@ -589,11 +593,10 @@ const openDeptDrill = async (metric) => {
     if (errorMsg.includes('系统异常')) {
       deptDrillError.value = '科室下钻功能暂不可用,后端接口正在维护中'
     } else {
-      deptDrillError.value = `科室下钻失败: ${errorMsg}`
+      deptDrillError.value = `查询失败: ${errorMsg}`
     }
 
     deptDrillData.value = []
-    // 不弹出错误提示,在对话框内显示即可
   } finally {
     drillLoading.value = false
   }

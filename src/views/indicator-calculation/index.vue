@@ -311,6 +311,7 @@ const startCalculation = async () => {
   calculationProgress.value = leafNodes.map(node => ({
     metricName: node.metricName,
     metricCode: node.metricCode,
+    supportDeptDrill: node.supportDeptDrill, // 记录是否支持科室下钻
     status: 'pending',
     result: '',
     message: ''
@@ -318,9 +319,11 @@ const startCalculation = async () => {
 
   for (let i = 0; i < calculationProgress.value.length; i++) {
     const item = calculationProgress.value[i]
+    const node = leafNodes[i]
     item.status = 'calculating'
 
     try {
+      // 步骤1: 普通指标计算
       const result = await indicatorResultApi.calculate({
         metricCode: item.metricCode,
         timeDimension: calcForm.value.timeDimension,
@@ -336,6 +339,22 @@ const startCalculation = async () => {
         // 处理 NaN (0/0的结果)
         item.result = isNaN(value) ? 0 : value
         item.message = '计算成功'
+
+        // 步骤2: 如果指标支持科室下钻,自动执行科室下钻计算
+        if (node.supportDeptDrill === 1) {
+          try {
+            await indicatorResultApi.executeDeptDrill({
+              metricCode: item.metricCode,
+              timeDimension: calcForm.value.timeDimension,
+              startDate: calcForm.value.startDate,
+              endDate: calcForm.value.endDate
+            })
+            item.message = '计算成功(含科室下钻)'
+          } catch (deptError) {
+            console.error(`科室下钻失败: ${item.metricCode}`, deptError)
+            item.message = '计算成功(科室下钻失败)'
+          }
+        }
       } else {
         item.status = 'failed'
         item.message = '计算结果为空'
