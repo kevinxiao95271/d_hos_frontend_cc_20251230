@@ -153,7 +153,28 @@ export const indicatorResultApi = {
     })
   },
 
-  // 获取科室下钻数据
+  // 执行科室下钻计算
+  executeDeptDrill(data) {
+    return request({
+      url: '/api/indicator-calculation/dept-drill',
+      method: 'post',
+      data
+    })
+  },
+
+  // 获取科室下钻结果
+  getDeptDrillResults(metricCode, params) {
+    return request({
+      url: '/api/indicator-calculation/dept-drill-results',
+      method: 'get',
+      params: {
+        metricCode,
+        ...params
+      }
+    })
+  },
+
+  // 获取科室下钻数据(旧接口,保留兼容)
   getDeptDrillDown(metricCode, params) {
     return request({
       url: `/api/indicator-result/dept-drill/${metricCode}`,

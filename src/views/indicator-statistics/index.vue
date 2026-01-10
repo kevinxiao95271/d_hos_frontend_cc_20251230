@@ -528,8 +528,18 @@ const openDeptDrill = async (metric) => {
   deptDrillError.value = '' // 清空之前的错误
 
   try {
-    // 调用后端API获取科室下钻数据
-    const deptData = await indicatorResultApi.getDeptDrillDown(
+    // 步骤1: 先执行科室下钻计算
+    ElMessage.info('正在执行科室下钻计算...')
+
+    await indicatorResultApi.executeDeptDrill({
+      metricCode: metric.metricCode,
+      timeDimension: queryForm.value.timeDimension,
+      startDate: dateRange.value[0],
+      endDate: dateRange.value[1]
+    })
+
+    // 步骤2: 查询科室下钻结果
+    const deptData = await indicatorResultApi.getDeptDrillResults(
       metric.metricCode,
       {
         timeDimension: queryForm.value.timeDimension,
@@ -565,10 +575,11 @@ const openDeptDrill = async (metric) => {
         }
       })
       deptDrillError.value = ''
+      ElMessage.success(`科室下钻完成,共 ${deptData.length} 个科室`)
     } else {
       // 如果后端没有数据,显示提示
       deptDrillData.value = []
-      // 不设置错误,使用空数据提示
+      ElMessage.warning('暂无科室下钻数据')
     }
   } catch (error) {
     console.error('Failed to load dept drill down data:', error)
@@ -578,7 +589,7 @@ const openDeptDrill = async (metric) => {
     if (errorMsg.includes('系统异常')) {
       deptDrillError.value = '科室下钻功能暂不可用,后端接口正在维护中'
     } else {
-      deptDrillError.value = errorMsg
+      deptDrillError.value = `科室下钻失败: ${errorMsg}`
     }
 
     deptDrillData.value = []
