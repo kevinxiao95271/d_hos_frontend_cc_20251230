@@ -80,19 +80,19 @@
       width="50%"
     >
       <el-form :inline="true">
-        <el-form-item label="开始日期">
+        <el-form-item label="选择年份">
           <el-date-picker
-            v-model="testParams.startDate"
-            type="date"
-            value-format="YYYY-MM-DD"
+            v-model="testYear"
+            type="year"
+            placeholder="选择年份"
+            value-format="YYYY"
+            @change="handleTestYearChange"
           />
         </el-form-item>
-        <el-form-item label="结束日期">
-          <el-date-picker
-            v-model="testParams.endDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-          />
+        <el-form-item>
+          <span style="color: #999; font-size: 12px;">
+            时间范围: {{ testParams.startDate }} 至 {{ testParams.endDate }}
+          </span>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="executeTest" :loading="testLoading">
@@ -201,10 +201,21 @@ const testVisible = ref(false)
 const testLoading = ref(false)
 const currentItem = ref(null)
 const testResult = ref(null)
+const testYear = ref('2023') // 测试年份
 const testParams = ref({
   startDate: '2023-01-01',
   endDate: '2023-12-31'
 })
+
+// 处理测试年份变化
+const handleTestYearChange = (year) => {
+  if (year) {
+    testParams.value = {
+      startDate: `${year}-01-01`,
+      endDate: `${year}-12-31`
+    }
+  }
+}
 
 const dialogVisible = ref(false)
 const submitLoading = ref(false)

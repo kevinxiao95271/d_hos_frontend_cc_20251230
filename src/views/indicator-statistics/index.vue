@@ -7,15 +7,17 @@
 
     <el-card style="margin-bottom: 20px;">
       <el-form :inline="true" :model="queryForm">
-        <el-form-item label="时间范围">
+        <el-form-item label="选择年份">
           <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
+            v-model="selectedYear"
+            type="year"
+            placeholder="选择年份"
+            value-format="YYYY"
+            @change="handleYearChange"
           />
+          <span style="margin-left: 8px; color: #999; font-size: 12px;">
+            时间范围: {{ dateRange[0] }} 至 {{ dateRange[1] }}
+          </span>
         </el-form-item>
         <el-form-item label="时间维度">
           <el-select v-model="queryForm.timeDimension" placeholder="请选择">
@@ -210,10 +212,18 @@ import { indicatorApi, indicatorResultApi, indicatorItemApi } from '@/api'
 
 const loading = ref(false)
 const drillLoading = ref(false)
+const selectedYear = ref('2023') // 选择的年份
 const dateRange = ref(['2023-01-01', '2023-12-31'])
 const queryForm = ref({
   timeDimension: 'YEAR'
 })
+
+// 处理年份变化
+const handleYearChange = (year) => {
+  if (year) {
+    dateRange.value = [`${year}-01-01`, `${year}-12-31`]
+  }
+}
 
 const treeData = ref([])
 const calculatedResults = ref({}) // 存储计算结果
