@@ -10,7 +10,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="时间维度">
-              <el-radio-group v-model="calcForm.timeDimension">
+              <el-radio-group v-model="calcForm.timeDimension" @change="handleDimensionChange">
                 <el-radio label="YEAR">按年</el-radio>
                 <el-radio label="MONTH">按月</el-radio>
                 <el-radio label="DAY">按日</el-radio>
@@ -20,7 +20,25 @@
           </el-col>
         </el-row>
 
-        <el-row :gutter="20">
+        <el-row :gutter="20" v-if="calcForm.timeDimension !== 'CUSTOM'">
+          <el-col :span="12">
+            <el-form-item :label="timePickerLabel">
+              <el-date-picker
+                v-model="timeValue"
+                :type="timePickerType"
+                :placeholder="timePickerPlaceholder"
+                style="width: 100%"
+                :value-format="timeValueFormat"
+                @change="handleTimeChange"
+              />
+              <div style="margin-top: 4px; color: #999; font-size: 12px;">
+                计算范围: {{ calcForm.startDate }} 至 {{ calcForm.endDate }}
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" v-if="calcForm.timeDimension === 'CUSTOM'">
           <el-col :span="12">
             <el-form-item label="开始日期">
               <el-date-picker
@@ -115,13 +133,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { indicatorApi, indicatorResultApi } from '@/api'
 
 const treeRef = ref(null)
 const calculating = ref(false)
 const treeData = ref([])
+const timeValue = ref('2023') // 时间选择器的值
 
 const calcForm = ref({
   timeDimension: 'YEAR',
@@ -135,6 +154,114 @@ const treeProps = {
 }
 
 const calculationProgress = ref([])
+
+// 根据时间维度计算时间选择器类型
+const timePickerType = computed(() => {
+  switch (calcForm.value.timeDimension) {
+    case 'YEAR':
+      return 'year'
+    case 'MONTH':
+      return 'month'
+    case 'DAY':
+      return 'date'
+    default:
+      return 'year'
+  }
+})
+
+// 根据时间维度计算时间选择器标签
+const timePickerLabel = computed(() => {
+  switch (calcForm.value.timeDimension) {
+    case 'YEAR':
+      return '选择年份'
+    case 'MONTH':
+      return '选择月份'
+    case 'DAY':
+      return '选择日期'
+    default:
+      return '选择时间'
+  }
+})
+
+// 根据时间维度计算时间选择器占位符
+const timePickerPlaceholder = computed(() => {
+  switch (calcForm.value.timeDimension) {
+    case 'YEAR':
+      return '选择年份'
+    case 'MONTH':
+      return '选择月份'
+    case 'DAY':
+      return '选择日期'
+    default:
+      return '选择时间'
+  }
+})
+
+// 根据时间维度计算值格式
+const timeValueFormat = computed(() => {
+  switch (calcForm.value.timeDimension) {
+    case 'YEAR':
+      return 'YYYY'
+    case 'MONTH':
+      return 'YYYY-MM'
+    case 'DAY':
+      return 'YYYY-MM-DD'
+    default:
+      return 'YYYY'
+  }
+})
+
+// 处理时间维度变化
+const handleDimensionChange = () => {
+  // 重置时间值为默认
+  switch (calcForm.value.timeDimension) {
+    case 'YEAR':
+      timeValue.value = '2023'
+      calcForm.value.startDate = '2023-01-01'
+      calcForm.value.endDate = '2023-12-31'
+      break
+    case 'MONTH':
+      timeValue.value = '2023-01'
+      calcForm.value.startDate = '2023-01-01'
+      calcForm.value.endDate = '2023-01-31'
+      break
+    case 'DAY':
+      timeValue.value = '2023-01-01'
+      calcForm.value.startDate = '2023-01-01'
+      calcForm.value.endDate = '2023-01-01'
+      break
+    case 'CUSTOM':
+      calcForm.value.startDate = '2023-01-01'
+      calcForm.value.endDate = '2023-12-31'
+      break
+  }
+}
+
+// 处理时间变化
+const handleTimeChange = (value) => {
+  if (!value) return
+
+  switch (calcForm.value.timeDimension) {
+    case 'YEAR':
+      // 按年: YYYY -> YYYY-01-01 至 YYYY-12-31
+      calcForm.value.startDate = `${value}-01-01`
+      calcForm.value.endDate = `${value}-12-31`
+      break
+    case 'MONTH':
+      // 按月: YYYY-MM -> YYYY-MM-01 至 YYYY-MM-最后一天
+      const year = value.substring(0, 4)
+      const month = value.substring(5, 7)
+      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate()
+      calcForm.value.startDate = `${value}-01`
+      calcForm.value.endDate = `${value}-${lastDay}`
+      break
+    case 'DAY':
+      // 按日: YYYY-MM-DD -> YYYY-MM-DD 至 YYYY-MM-DD
+      calcForm.value.startDate = value
+      calcForm.value.endDate = value
+      break
+  }
+}
 
 const loadTree = async () => {
   try {
