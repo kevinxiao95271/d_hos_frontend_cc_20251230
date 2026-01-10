@@ -131,8 +131,12 @@
         <el-form-item label="指标项编码" prop="itemCode">
           <el-input
             v-model="formData.itemCode"
-            :placeholder="formData.id ? '请输入指标项编码，例如: a0041' : '自动跟随指标项名称，也可手动修改'"
+            placeholder="请输入指标项编码，格式: 字母+数字，例如: A0001, a0041"
+            maxlength="10"
           />
+          <div style="margin-top: 4px; color: #999; font-size: 12px;">
+            格式要求: 必须以字母开头，后跟数字，例如: A0001、a0041
+          </div>
         </el-form-item>
 
         <el-form-item label="指标项类型" prop="itemType">
@@ -184,7 +188,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { indicatorItemApi } from '@/api'
 
@@ -217,17 +221,14 @@ const formData = reactive({
   description: ''
 })
 
-// 监听指标项名称变化，自动同步到指标项编码（仅新增模式）
-watch(() => formData.itemName, (newName) => {
-  // 只在新增模式下自动同步
-  if (!formData.id && newName) {
-    formData.itemCode = newName
-  }
-})
-
 const formRules = {
   itemCode: [
-    { required: true, message: '请输入指标项编码', trigger: 'blur' }
+    { required: true, message: '请输入指标项编码', trigger: 'blur' },
+    {
+      pattern: /^[a-zA-Z]+\d+$/,
+      message: '编码格式不正确，必须以字母开头，后跟数字，例如: A0001、a0041',
+      trigger: 'blur'
+    }
   ],
   itemName: [
     { required: true, message: '请输入指标项名称', trigger: 'blur' }
