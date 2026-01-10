@@ -588,8 +588,8 @@ const openDeptDrill = async (metric) => {
         timeValueParam = dateRange.value[0]
         break
       case 'CUSTOM':
-        // 自定义范围: 使用开始日期
-        timeValueParam = dateRange.value[0]
+        // 自定义范围: 使用 startDate~endDate 格式
+        timeValueParam = `${dateRange.value[0]}~${dateRange.value[1]}`
         break
     }
 
