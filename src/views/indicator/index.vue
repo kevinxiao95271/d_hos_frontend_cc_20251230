@@ -124,16 +124,21 @@
               :closable="false"
             >
               <p>计算表达式: <strong>{{ selectedNode.expression }}</strong></p>
-              <p style="margin-top: 8px;">
-                依赖指标项:
+              <p style="margin-top: 8px; color: #909399;">
+                依赖指标项（系统自动解析）:
                 <el-tag
                   v-for="item in parseRelatedItems(selectedNode.relatedItems)"
                   :key="item"
                   size="small"
+                  type="info"
                   style="margin-left: 4px;"
+                  effect="plain"
                 >
                   {{ item }}
                 </el-tag>
+                <span v-if="!selectedNode.relatedItems || parseRelatedItems(selectedNode.relatedItems).length === 0" style="color: #C0C4CC;">
+                  暂未解析
+                </span>
               </p>
             </el-alert>
           </div>
@@ -168,16 +173,27 @@
           />
         </el-form-item>
 
-        <el-form-item label="指标编码" prop="metricCode">
-          <el-input v-model="formData.metricCode" placeholder="请输入指标编码" />
-        </el-form-item>
-
         <el-form-item label="指标名称" prop="metricName">
           <el-input v-model="formData.metricName" placeholder="请输入指标名称" />
         </el-form-item>
 
+        <el-form-item label="指标编码" prop="metricCode">
+          <el-input
+            v-model="formData.metricCode"
+            :placeholder="formData.id ? '请输入指标编码' : '自动跟随指标名称，也可手动修改'"
+          />
+        </el-form-item>
+
         <el-form-item label="层级" prop="indicatorLevel">
-          <el-input-number v-model="formData.indicatorLevel" :min="1" :max="5" />
+          <el-input-number
+            v-model="formData.indicatorLevel"
+            :min="1"
+            :max="5"
+            :disabled="!!formData.parentCode"
+          />
+          <span v-if="formData.parentCode" style="margin-left: 8px; color: #999; font-size: 12px;">
+            自动根据父节点层级计算
+          </span>
         </el-form-item>
 
         <el-form-item label="是否末级" prop="isLeaf">
@@ -209,15 +225,9 @@
             :rows="3"
             placeholder="例如: a0046/a0041 或 指标项编码"
           />
-        </el-form-item>
-
-        <el-form-item label="依赖指标项" prop="relatedItems" v-if="formData.isLeaf === 1 && formData.calculationType === 'EXPRESSION'">
-          <el-input
-            v-model="formData.relatedItems"
-            type="textarea"
-            :rows="2"
-            placeholder='JSON数组格式，例如: ["a0041","a0046"]'
-          />
+          <div style="margin-top: 4px; color: #999; font-size: 12px;">
+            提示：保存后系统将自动解析表达式中的依赖指标项
+          </div>
         </el-form-item>
 
         <el-form-item label="单位" prop="unit">
@@ -285,6 +295,37 @@ watch(() => formData.metricName, (newName) => {
   // 只在新增模式下自动同步
   if (!formData.id && newName) {
     formData.metricCode = newName
+  }
+})
+
+// 从树结构中查找节点
+const findNodeInTree = (tree, code) => {
+  if (!tree || !code) return null
+
+  for (const node of tree) {
+    if (node.metricCode === code) {
+      return node
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeInTree(node.children, code)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+// 监听父节点变化，自动计算层级
+watch(() => formData.parentCode, (newParentCode) => {
+  if (newParentCode) {
+    // 查找父节点
+    const parentNode = findNodeInTree(treeData.value, newParentCode)
+    if (parentNode) {
+      // 父节点层级 + 1
+      formData.indicatorLevel = parentNode.indicatorLevel + 1
+    }
+  } else {
+    // 没有父节点，设为第1级
+    formData.indicatorLevel = 1
   }
 })
 
@@ -396,7 +437,7 @@ const submitForm = async () => {
         metricType: formData.metricType,
         calculationType: formData.isLeaf === 1 ? formData.calculationType : 'NONE',
         expression: formData.isLeaf === 1 ? formData.expression : null,
-        relatedItems: formData.isLeaf === 1 && formData.calculationType === 'EXPRESSION' ? formData.relatedItems : null,
+        // relatedItems 由后端自动解析，前端不发送
         unit: formData.unit || null,
         supportDeptDrill: formData.supportDeptDrill,
         // 后端使用 sortOrder，前端使用 displayOrder

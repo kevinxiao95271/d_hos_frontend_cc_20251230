@@ -124,12 +124,15 @@
         :rules="formRules"
         label-width="120px"
       >
-        <el-form-item label="指标项编码" prop="itemCode">
-          <el-input v-model="formData.itemCode" placeholder="请输入指标项编码，例如: a0041" />
-        </el-form-item>
-
         <el-form-item label="指标项名称" prop="itemName">
           <el-input v-model="formData.itemName" placeholder="请输入指标项名称" />
+        </el-form-item>
+
+        <el-form-item label="指标项编码" prop="itemCode">
+          <el-input
+            v-model="formData.itemCode"
+            :placeholder="formData.id ? '请输入指标项编码，例如: a0041' : '自动跟随指标项名称，也可手动修改'"
+          />
         </el-form-item>
 
         <el-form-item label="指标项类型" prop="itemType">
