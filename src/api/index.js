@@ -210,3 +210,30 @@ export const dataValidationApi = {
     })
   }
 }
+
+export const indicatorScopeApi = {
+  getByDept(deptId) {
+    return request({ url: `/api/indicator-scope/by-dept/${deptId}`, method: 'get' })
+  },
+  getByMetric(metricCode) {
+    return request({ url: `/api/indicator-scope/by-metric/${metricCode}`, method: 'get' })
+  },
+  addBinding(data) {
+    return request({ url: '/api/indicator-scope/binding', method: 'post', data })
+  },
+  deleteBinding(params) {
+    return request({ url: '/api/indicator-scope/binding', method: 'delete', params })
+  },
+  replaceByDept(data) {
+    return request({ url: '/api/indicator-scope/replace-by-dept', method: 'post', data })
+  },
+  replaceByMetric(data) {
+    return request({ url: '/api/indicator-scope/replace-by-metric', method: 'post', data })
+  },
+  clearByDept(deptId) {
+    return request({ url: `/api/indicator-scope/by-dept/${deptId}`, method: 'delete' })
+  },
+  clearByMetric(metricCode) {
+    return request({ url: `/api/indicator-scope/by-metric/${metricCode}`, method: 'delete' })
+  }
+}

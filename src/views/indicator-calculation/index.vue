@@ -12,6 +12,7 @@
             <el-form-item label="时间维度">
               <el-radio-group v-model="calcForm.timeDimension" @change="handleDimensionChange">
                 <el-radio label="YEAR">按年</el-radio>
+                <el-radio label="QUARTER">按季</el-radio>
                 <el-radio label="MONTH">按月</el-radio>
                 <el-radio label="DAY">按日</el-radio>
                 <el-radio label="CUSTOM">自定义范围</el-radio>
@@ -160,6 +161,8 @@ const timePickerType = computed(() => {
   switch (calcForm.value.timeDimension) {
     case 'YEAR':
       return 'year'
+    case 'QUARTER':
+      return 'quarter'
     case 'MONTH':
       return 'month'
     case 'DAY':
@@ -174,6 +177,8 @@ const timePickerLabel = computed(() => {
   switch (calcForm.value.timeDimension) {
     case 'YEAR':
       return '选择年份'
+    case 'QUARTER':
+      return '选择季度'
     case 'MONTH':
       return '选择月份'
     case 'DAY':
@@ -188,6 +193,8 @@ const timePickerPlaceholder = computed(() => {
   switch (calcForm.value.timeDimension) {
     case 'YEAR':
       return '选择年份'
+    case 'QUARTER':
+      return '选择季度'
     case 'MONTH':
       return '选择月份'
     case 'DAY':
@@ -202,6 +209,8 @@ const timeValueFormat = computed(() => {
   switch (calcForm.value.timeDimension) {
     case 'YEAR':
       return 'YYYY'
+    case 'QUARTER':
+      return 'YYYY-MM-DD'
     case 'MONTH':
       return 'YYYY-MM'
     case 'DAY':
@@ -219,6 +228,11 @@ const handleDimensionChange = () => {
       timeValue.value = '2023'
       calcForm.value.startDate = '2023-01-01'
       calcForm.value.endDate = '2023-12-31'
+      break
+    case 'QUARTER':
+      timeValue.value = '2023-01-01'
+      calcForm.value.startDate = '2023-01-01'
+      calcForm.value.endDate = '2023-03-31'
       break
     case 'MONTH':
       timeValue.value = '2023-01'
@@ -247,7 +261,18 @@ const handleTimeChange = (value) => {
       calcForm.value.startDate = `${value}-01-01`
       calcForm.value.endDate = `${value}-12-31`
       break
-    case 'MONTH':
+    case 'QUARTER': {
+      // el-date-picker type=quarter + value-format=YYYY-MM-DD 返回该季度首日
+      const d = new Date(value)
+      const year = d.getFullYear()
+      const quarter = Math.ceil((d.getMonth() + 1) / 3)
+      const qRanges = { 1: ['01-01', '03-31'], 2: ['04-01', '06-30'], 3: ['07-01', '09-30'], 4: ['10-01', '12-31'] }
+      const [qs, qe] = qRanges[quarter]
+      calcForm.value.startDate = `${year}-${qs}`
+      calcForm.value.endDate = `${year}-${qe}`
+      break
+    }
+    case 'MONTH': {
       // 按月: YYYY-MM -> YYYY-MM-01 至 YYYY-MM-最后一天
       const year = value.substring(0, 4)
       const month = value.substring(5, 7)
@@ -255,6 +280,7 @@ const handleTimeChange = (value) => {
       calcForm.value.startDate = `${value}-01`
       calcForm.value.endDate = `${value}-${lastDay}`
       break
+    }
     case 'DAY':
       // 按日: YYYY-MM-DD -> YYYY-MM-DD 至 YYYY-MM-DD
       calcForm.value.startDate = value

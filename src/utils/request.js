@@ -8,6 +8,13 @@ const service = axios.create({
 
 service.interceptors.request.use(
   config => {
+    if (!config.skipAuth) {
+      const token = localStorage.getItem('token')
+      if (token) {
+        config.headers = config.headers || {}
+        config.headers['Authorization'] = `Bearer ${token}`
+      }
+    }
     return config
   },
   error => {
@@ -20,27 +27,26 @@ service.interceptors.response.use(
   response => {
     const res = response.data
 
+    // /auth/** 和 /system/** 直接返回裸 JSON，不包 Result
+    if (Array.isArray(res) || typeof res !== 'object' || !('code' in res)) {
+      return res
+    }
+
     if (res.code !== 200) {
-      // 检查请求配置中是否设置了不显示错误提示
       if (!response.config.hideErrorMessage) {
         ElMessage.error(res.message || '请求失败')
       }
       return Promise.reject(new Error(res.message || '请求失败'))
     }
 
-    // 处理返回数据中的NaN值和null值 (JavaScript的NaN在JSON中会变成null)
-    // 如果后端返回的是NaN或null,在前端处理为0
     let data = res.data
     if (data !== null && typeof data === 'object') {
-      // 如果data有value字段且为NaN或null,转为0
       if (data.value !== undefined && (data.value === null || isNaN(data.value))) {
         data.value = 0
       }
-      // 如果data有resultValue字段且为NaN或null,也转为0
       if (data.resultValue !== undefined && (data.resultValue === null || isNaN(data.resultValue))) {
         data.resultValue = 0
       }
-      // 如果data有result对象且result.result_value为null或NaN,转为0
       if (data.result && typeof data.result === 'object') {
         if (data.result.result_value !== undefined && (data.result.result_value === null || isNaN(data.result.result_value))) {
           data.result.result_value = 0
@@ -49,7 +55,6 @@ service.interceptors.response.use(
     } else if (data !== null && isNaN(data)) {
       data = 0
     } else if (data === null) {
-      // 如果整个data为null,也转为0
       data = 0
     }
 
@@ -57,7 +62,18 @@ service.interceptors.response.use(
   },
   error => {
     console.error('Response error:', error)
-    // 检查请求配置中是否设置了不显示错误提示
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('allowedMenuPaths')
+      ElMessage.error('登录已过期，请重新登录')
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 1000)
+      return Promise.reject(error)
+    }
+
     if (!error.config?.hideErrorMessage) {
       ElMessage.error(error.message || '网络请求失败')
     }
