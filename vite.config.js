@@ -10,10 +10,10 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
+    port: 8071,
     proxy: {
       '/dgear': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8070',
         changeOrigin: true
       }
     }
