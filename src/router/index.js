@@ -66,6 +66,18 @@ const routes = [
         name: 'IndicatorScope',
         component: () => import('@/views/indicator-scope/index.vue'),
         meta: { title: '指标可见范围', icon: 'SetUp', menuGroup: 'system' }
+      },
+      {
+        path: 'report',
+        name: 'Report',
+        component: () => import('@/views/report/index.vue'),
+        meta: { title: '分析报告', icon: 'Tickets', menuGroup: 'report' }
+      },
+      {
+        path: 'system-settings',
+        name: 'SystemSettings',
+        component: () => import('@/views/system-settings/index.vue'),
+        meta: { title: '系统设置', icon: 'Setting', menuGroup: 'system' }
       }
     ]
   },

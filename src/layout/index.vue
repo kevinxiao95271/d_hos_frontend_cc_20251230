@@ -3,7 +3,7 @@
     <el-container>
       <el-aside width="200px" class="layout-aside">
         <div class="logo">
-          <h1>高质量医疗指标管理系统</h1>
+          <h1>{{ systemStore.hospitalName }}</h1>
         </div>
         <el-menu
           :default-active="activeMenu"
@@ -65,14 +65,18 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { useSystemStore } from '@/stores/system'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const systemStore = useSystemStore()
+
+onMounted(() => { systemStore.fetchConfig() })
 
 const allMenuItems = computed(() => router.options.routes.find(r => r.path === '/')?.children || [])
 
