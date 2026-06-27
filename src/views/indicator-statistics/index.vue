@@ -5,6 +5,15 @@
       <p>查看指标计算结果,支持科室下钻分析</p>
     </div>
 
+    <!-- 来源类型 Tab -->
+    <el-card style="margin-bottom: 12px; padding-bottom: 0">
+      <el-tabs v-model="sourceType" @tab-change="loadResults">
+        <el-tab-pane label="全部汇总" name="" />
+        <el-tab-pane label="采集类（AUTO）" name="AUTO" />
+        <el-tab-pane label="填报类（MANUAL）" name="MANUAL" />
+      </el-tabs>
+    </el-card>
+
     <el-card style="margin-bottom: 20px;">
       <el-form :model="queryForm">
         <el-row :gutter="20">
@@ -254,7 +263,8 @@ import { indicatorApi, indicatorResultApi, indicatorItemApi } from '@/api'
 
 const loading = ref(false)
 const drillLoading = ref(false)
-const timeValue = ref('2023') // 时间选择器的值
+const sourceType = ref('')   // '' | 'AUTO' | 'MANUAL'
+const timeValue = ref('2023')
 const dateRange = ref(['2023-01-01', '2023-12-31'])
 const queryForm = ref({
   timeDimension: 'YEAR'
@@ -498,11 +508,13 @@ const loadResults = async () => {
     ElMessage.info(`正在查询 ${leafMetrics.length} 个指标的历史结果...`)
 
     // 3. 查询已存在的计算结果
-    const existingResults = await indicatorResultApi.getResults({
+    const resultParams = {
       timeDimension: queryForm.value.timeDimension,
       startDate: dateRange.value[0],
       endDate: dateRange.value[1]
-    })
+    }
+    if (sourceType.value) resultParams.sourceType = sourceType.value
+    const existingResults = await indicatorResultApi.getResults(resultParams)
 
     // 4. 将查询结果转换为Map，方便查找
     const resultsMap = {}
@@ -685,7 +697,7 @@ const openDeptDrill = async (metric) => {
 }
 
 const exportResults = () => {
-  ElMessage.success('导出功能开发中')
+  ElMessage.info('请使用"分析报告"页面导出 Word 报告')
 }
 </script>
 

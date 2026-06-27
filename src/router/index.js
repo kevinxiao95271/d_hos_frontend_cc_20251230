@@ -68,6 +68,18 @@ const routes = [
         meta: { title: '指标可见范围', icon: 'SetUp', menuGroup: 'system' }
       },
       {
+        path: 'report-task',
+        name: 'ReportTask',
+        component: () => import('@/views/report-task/index.vue'),
+        meta: { title: '填报任务管理', icon: 'DocumentAdd', menuGroup: 'report' }
+      },
+      {
+        path: 'fill-report',
+        name: 'FillReport',
+        component: () => import('@/views/fill-report/index.vue'),
+        meta: { title: '我的填报', icon: 'EditPen', menuGroup: 'report' }
+      },
+      {
         path: 'report',
         name: 'Report',
         component: () => import('@/views/report/index.vue'),
