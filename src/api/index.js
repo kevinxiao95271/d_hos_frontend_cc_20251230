@@ -2,29 +2,40 @@ import request from '@/utils/request'
 import { toDateRange } from '@/utils/dateRange'
 
 export const indicatorItemApi = {
-  // 获取指标项列表
   getList() {
-    return request({
-      url: '/api/indicator-item/list',
-      method: 'get'
-    })
+    return request({ url: '/api/indicator-item/list', method: 'get' })
   },
 
-  // 获取指标项分页列表
   getPage(params) {
-    return request({
-      url: '/api/indicator-item/page',
-      method: 'get',
-      params
-    })
+    return request({ url: '/api/indicator-item/page', method: 'get', params })
   },
 
-  // 获取指标项详情
   getDetail(id) {
-    return request({
-      url: `/api/indicator-item/${id}`,
-      method: 'get'
-    })
+    return request({ url: `/api/indicator-item/${id}`, method: 'get' })
+  },
+
+  getByCode(itemCode) {
+    return request({ url: `/api/indicator-item/code/${itemCode}`, method: 'get' })
+  },
+
+  // 新建 + 更新统一用 save（id 为空=新建，有 id=更新）
+  save(data) {
+    return request({ url: '/api/indicator-item/save', method: 'post', data })
+  },
+
+  // 单条删除
+  delete(id) {
+    return request({ url: `/api/indicator-item/${id}`, method: 'delete' })
+  },
+
+  // 批量删除（POST body 带 id 列表）
+  batchDelete(ids) {
+    return request({ url: '/api/indicator-item/batch', method: 'post', data: { ids } })
+  },
+
+  // 校验 SQL 合法性
+  validateSql(data) {
+    return request({ url: '/api/indicator-item/validate-sql', method: 'post', data })
   },
 
   // 执行指标项（自动将 timeDimension+timeValue 转为 startDate/endDate）
@@ -37,93 +48,42 @@ export const indicatorItemApi = {
       params: { timeDimension, timeValue, ...dateRange, ...rest },
       ...config
     })
-  },
-
-  // 创建指标项
-  create(data) {
-    return request({
-      url: '/api/indicator-item',
-      method: 'post',
-      data
-    })
-  },
-
-  // 更新指标项
-  update(id, data) {
-    return request({
-      url: `/api/indicator-item/${id}`,
-      method: 'put',
-      data
-    })
-  },
-
-  // 删除指标项
-  delete(id) {
-    return request({
-      url: `/api/indicator-item/${id}`,
-      method: 'delete'
-    })
   }
 }
 
 export const indicatorApi = {
-  // 获取指标树
   getTree() {
-    return request({
-      url: '/api/indicator/tree',
-      method: 'get'
-    })
+    return request({ url: '/api/indicator/tree', method: 'get' })
   },
 
-  // 获取指标列表（支持分页）
   getPage(params) {
-    return request({
-      url: '/api/indicator/page',
-      method: 'get',
-      params
-    })
+    return request({ url: '/api/indicator/page', method: 'get', params })
   },
 
-  // 获取指标详情
   getDetail(id) {
-    return request({
-      url: `/api/indicator/${id}`,
-      method: 'get'
-    })
+    return request({ url: `/api/indicator/${id}`, method: 'get' })
   },
 
-  // 获取子节点
+  getByCode(metricCode) {
+    return request({ url: `/api/indicator/code/${metricCode}`, method: 'get' })
+  },
+
   getChildren(parentCode) {
-    return request({
-      url: `/api/indicator/children/${parentCode}`,
-      method: 'get'
-    })
+    return request({ url: `/api/indicator/children/${parentCode}`, method: 'get' })
   },
 
-  // 创建指标
-  create(data) {
-    return request({
-      url: '/api/indicator',
-      method: 'post',
-      data
-    })
+  // 新建 + 更新统一用 save（id 为空=新建，有 id=更新）
+  save(data) {
+    return request({ url: '/api/indicator/save', method: 'post', data })
   },
 
-  // 更新指标
-  update(id, data) {
-    return request({
-      url: `/api/indicator/${id}`,
-      method: 'put',
-      data
-    })
-  },
-
-  // 删除指标
   delete(id) {
-    return request({
-      url: `/api/indicator/${id}`,
-      method: 'delete'
-    })
+    return request({ url: `/api/indicator/${id}`, method: 'delete' })
+  },
+
+  // 校验计算表达式
+  validateExpression(data) {
+    return request({ url: '/api/indicator/validate-expression', method: 'post', data })
   }
 }
 
@@ -149,13 +109,14 @@ export const indicatorResultApi = {
     })
   },
 
-  // 获取指标结果列表
+  // 获取指标结果列表（支持 sourceType=AUTO|MANUAL）
   getResults(params) {
-    return request({
-      url: '/api/indicator-result/list',
-      method: 'get',
-      params
-    })
+    return request({ url: '/api/indicator-result/list', method: 'get', params })
+  },
+
+  // 查最新一次计算结果（不按时间范围）
+  getLatest(params) {
+    return request({ url: '/api/indicator-result/latest', method: 'get', params })
   },
 
   // 执行科室下钻计算（自动将 timeDimension+timeValue 转为 startDate/endDate）

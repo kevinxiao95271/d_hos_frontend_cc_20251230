@@ -53,5 +53,68 @@ export const reportTaskApi = {
   // 提交整份填报
   submitFill(taskId) {
     return request({ url: '/api/report/data/submit', method: 'post', params: { taskId } })
+  },
+
+  // ── Excel 双向 ────────────────────────────────────────────
+
+  // 下载空白填报 Excel 模板
+  downloadTemplate(taskId, deptId) {
+    const token = localStorage.getItem('token')
+    const url = `/dgear/api/report/task/export-template?taskId=${taskId}&deptId=${deptId}`
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `填报模板_${taskId}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  },
+
+  // 上传已填写 Excel（multipart）
+  importExcel(taskId, file) {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('taskId', taskId)
+    return request({
+      url: '/api/report/data/import',
+      method: 'post',
+      data: form,
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+
+  // 管理员导出审核通过的填报结果
+  exportApproved(taskId) {
+    return request({
+      url: '/api/report/data/export-approved',
+      method: 'get',
+      params: { taskId },
+      responseType: 'blob',
+      timeout: 30000
+    })
+  },
+
+  // ── 模板管理 ──────────────────────────────────────────────
+
+  // 从已有任务另存为模板
+  saveAsTemplate(taskId, templateName) {
+    return request({
+      url: `/api/report/task/${taskId}/save-as-template`,
+      method: 'post',
+      params: { templateName }
+    })
+  },
+
+  // 查模板列表（复用 getTaskPage 加 status=TEMPLATE，或单独接口）
+  getTemplateScopes(templateId) {
+    return request({ url: `/api/report/task/template/${templateId}/scopes`, method: 'get' })
+  },
+
+  // 从模板一键下发新任务
+  createFromTemplate(templateId, data) {
+    return request({
+      url: `/api/report/task/from-template/${templateId}`,
+      method: 'post',
+      data
+    })
   }
 }

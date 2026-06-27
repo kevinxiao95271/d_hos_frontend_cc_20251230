@@ -38,6 +38,9 @@
                   {{ realNameInitial }}
                 </el-avatar>
                 <span class="user-name">{{ authStore.realName }}</span>
+                <el-tag v-if="authStore.roleName" size="small" type="info" style="margin-left:4px">
+                  {{ authStore.roleName }}
+                </el-tag>
                 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </span>
               <template #dropdown>
@@ -76,7 +79,10 @@ const router = useRouter()
 const authStore = useAuthStore()
 const systemStore = useSystemStore()
 
-onMounted(() => { systemStore.fetchConfig() })
+onMounted(() => {
+  systemStore.fetchConfig()
+  authStore.fetchUserInfo()
+})
 
 const allMenuItems = computed(() => router.options.routes.find(r => r.path === '/')?.children || [])
 

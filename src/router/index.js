@@ -86,6 +86,12 @@ const routes = [
         meta: { title: '分析报告', icon: 'Tickets', menuGroup: 'report' }
       },
       {
+        path: 'system-manage',
+        name: 'SystemManage',
+        component: () => import('@/views/system-manage/index.vue'),
+        meta: { title: '用户管理', icon: 'UserFilled', menuGroup: 'system' }
+      },
+      {
         path: 'system-settings',
         name: 'SystemSettings',
         component: () => import('@/views/system-settings/index.vue'),
