@@ -262,7 +262,9 @@ const handleCreate = async () => {
   }
   creating.value = true
   try {
-    await reportTaskApi.createTask({ ...createForm })
+    // 后端字段名为 name（不是 taskName）
+    const { taskName, ...rest } = createForm
+    await reportTaskApi.createTask({ name: taskName, ...rest })
     ElMessage.success('任务创建成功')
     createForm.taskName = ''
     createForm.timeValue = ''
