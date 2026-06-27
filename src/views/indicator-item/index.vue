@@ -162,6 +162,13 @@
             placeholder="请输入SQL查询语句"
             style="font-family: 'Courier New', monospace;"
           />
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+            <el-button size="small" :loading="sqlValidating" @click="validateSql">
+              校验 SQL
+            </el-button>
+            <el-tag v-if="sqlValidResult === 'ok'" type="success" size="small">✓ SQL 合法</el-tag>
+            <el-tag v-else-if="sqlValidResult === 'fail'" type="danger" size="small">✗ {{ sqlValidMsg }}</el-tag>
+          </div>
           <div style="margin-top: 8px; color: #606266; font-size: 12px; line-height: 1.8;">
             <p style="margin: 4px 0; font-weight: 600; color: #409EFF;">📌 重要说明:</p>
             <p style="margin: 4px 0;">
@@ -238,6 +245,27 @@ const handleTestYearChange = (year) => {
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref(null)
+const sqlValidating  = ref(false)
+const sqlValidResult = ref('')   // '' | 'ok' | 'fail'
+const sqlValidMsg    = ref('')
+
+const validateSql = async () => {
+  if (!formData.querySql?.trim()) {
+    ElMessage.warning('请先输入 SQL')
+    return
+  }
+  sqlValidating.value = true
+  sqlValidResult.value = ''
+  try {
+    await indicatorItemApi.validateSql({ sql: formData.querySql })
+    sqlValidResult.value = 'ok'
+  } catch (err) {
+    sqlValidResult.value = 'fail'
+    sqlValidMsg.value = err.message || '校验失败'
+  } finally {
+    sqlValidating.value = false
+  }
+}
 
 const formData = reactive({
   id: null,
@@ -335,6 +363,8 @@ const resetForm = () => {
   formData.unit = ''
   formData.querySql = ''
   formData.description = ''
+  sqlValidResult.value = ''
+  sqlValidMsg.value = ''
 
   if (formRef.value) {
     formRef.value.clearValidate()

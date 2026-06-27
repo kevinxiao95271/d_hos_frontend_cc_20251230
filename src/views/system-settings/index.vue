@@ -103,7 +103,7 @@ import { systemConfigApi } from '@/api/system'
 const authStore  = useAuthStore()
 const systemStore = useSystemStore()
 
-const isAdmin = authStore.dataScope === 50
+const isAdmin = authStore.isAdmin  // dataScope <= 50（超管50 / 全院10）
 const formRef = ref(null)
 const saving  = ref(false)
 

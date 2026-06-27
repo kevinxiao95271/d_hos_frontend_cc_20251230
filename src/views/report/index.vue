@@ -272,17 +272,64 @@ function getReportParams() {
   }
 }
 
+// 将 YYYYMM 转为 { year, month } 数字对
+function parseYM(ym) {
+  return { year: Number(ym.slice(0, 4)), month: Number(ym.slice(4, 6)) }
+}
+// 生成连续月份列表 [{ ym, startDate, endDate }, ...]
+function buildMonthChunks(startYM, endYM, chunkSize = 3) {
+  const months = []
+  let { year: y, month: m } = parseYM(startYM)
+  const { year: ey, month: em } = parseYM(endYM)
+  while (y < ey || (y === ey && m <= em)) {
+    const mm  = String(m).padStart(2, '0')
+    const lastDay = new Date(y, m, 0).getDate()
+    months.push({
+      ym: `${y}${mm}`,
+      startDate: `${y}-${mm}-01`,
+      endDate:   `${y}-${mm}-${String(lastDay).padStart(2, '0')}`
+    })
+    m++; if (m > 12) { m = 1; y++ }
+  }
+  // 按 chunkSize 分组
+  const chunks = []
+  for (let i = 0; i < months.length; i += chunkSize) {
+    const slice = months.slice(i, i + chunkSize)
+    chunks.push({ startDate: slice[0].startDate, endDate: slice[slice.length - 1].endDate })
+  }
+  return { total: months.length, chunks }
+}
+
 const handleBatchCalculate = async (type) => {
   const params = getCalcParams(type)
   if (!params) return
 
   calculating.value = true
-  calcMessage.value = '正在批量计算指标，请稍候...'
   calcStatus.value  = 'info'
+
   try {
-    const res = await reportApi.batchCalculate(params)
-    calcMessage.value = `计算完成！${res?.message || ''}`
-    calcStatus.value  = 'success'
+    if (type === 'MONTHLY') {
+      const { total, chunks } = buildMonthChunks(monthlyForm.startMonth, monthlyForm.endMonth)
+      if (total > 3) {
+        calcMessage.value = `月度跨 ${total} 期，自动拆为 ${chunks.length} 批（每批 ≤3 个月）依次计算...`
+        let doneCount = 0
+        for (const chunk of chunks) {
+          calcMessage.value = `第 ${doneCount + 1}/${chunks.length} 批：${chunk.startDate} ~ ${chunk.endDate}...`
+          await reportApi.batchCalculate({ timeDimension: 'MONTH', startDate: chunk.startDate, endDate: chunk.endDate })
+          doneCount++
+        }
+        calcMessage.value = `全部 ${chunks.length} 批计算完成（共 ${total} 个月）`
+      } else {
+        calcMessage.value = '正在批量计算指标，请稍候...'
+        const res = await reportApi.batchCalculate(params)
+        calcMessage.value = `计算完成！${res?.message || ''}`
+      }
+    } else {
+      calcMessage.value = '正在批量计算年度指标，请稍候...'
+      const res = await reportApi.batchCalculate(params)
+      calcMessage.value = `计算完成！${res?.message || ''}`
+    }
+    calcStatus.value = 'success'
     ElMessage.success('批量计算完成，可以预览报告')
   } catch (err) {
     calcMessage.value = `计算失败：${err.message}`

@@ -231,6 +231,13 @@
             :rows="3"
             placeholder="例如: a0046/a0041 或 指标项编码"
           />
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+            <el-button size="small" :loading="exprValidating" @click="validateExpression">
+              校验表达式
+            </el-button>
+            <el-tag v-if="exprValidResult === 'ok'" type="success" size="small">✓ 表达式合法</el-tag>
+            <el-tag v-else-if="exprValidResult === 'fail'" type="danger" size="small">✗ {{ exprValidMsg }}</el-tag>
+          </div>
           <div style="margin-top: 4px; color: #999; font-size: 12px;">
             提示：保存后系统将自动解析表达式中的依赖指标项
           </div>
@@ -273,6 +280,27 @@ const selectedNode = ref(null)
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref(null)
+const exprValidating  = ref(false)
+const exprValidResult = ref('')   // '' | 'ok' | 'fail'
+const exprValidMsg    = ref('')
+
+const validateExpression = async () => {
+  if (!formData.expression?.trim()) {
+    ElMessage.warning('请先输入计算表达式')
+    return
+  }
+  exprValidating.value = true
+  exprValidResult.value = ''
+  try {
+    await indicatorApi.validateExpression({ expression: formData.expression })
+    exprValidResult.value = 'ok'
+  } catch (err) {
+    exprValidResult.value = 'fail'
+    exprValidMsg.value = err.message || '校验失败'
+  } finally {
+    exprValidating.value = false
+  }
+}
 
 const treeProps = {
   children: 'children',
@@ -399,6 +427,8 @@ const resetForm = () => {
   formData.unit = ''
   formData.supportDeptDrill = 0
   formData.displayOrder = 0
+  exprValidResult.value = ''
+  exprValidMsg.value = ''
 
   if (formRef.value) {
     formRef.value.clearValidate()
