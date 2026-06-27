@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { toDateRange } from '@/utils/dateRange'
 
 export const indicatorItemApi = {
   // 获取指标项列表
@@ -26,12 +27,14 @@ export const indicatorItemApi = {
     })
   },
 
-  // 执行指标项
+  // 执行指标项（自动将 timeDimension+timeValue 转为 startDate/endDate）
   execute(itemCode, params, config = {}) {
+    const { timeDimension, timeValue, ...rest } = params || {}
+    const dateRange = timeDimension && timeValue ? toDateRange(timeDimension, timeValue) : {}
     return request({
       url: `/api/indicator-item/${itemCode}/execute`,
       method: 'post',
-      params,
+      params: { timeDimension, timeValue, ...dateRange, ...rest },
       ...config
     })
   },
@@ -125,12 +128,14 @@ export const indicatorApi = {
 }
 
 export const indicatorResultApi = {
-  // 计算指标
+  // 计算指标（自动将 timeDimension+timeValue 转为 startDate/endDate）
   calculate(params, config = {}) {
+    const { timeDimension, timeValue, ...rest } = params || {}
+    const dateRange = timeDimension && timeValue ? toDateRange(timeDimension, timeValue) : {}
     return request({
       url: '/api/indicator-result/calculate',
       method: 'post',
-      params,
+      params: { timeDimension, timeValue, ...dateRange, ...rest },
       ...config
     })
   },
@@ -153,12 +158,14 @@ export const indicatorResultApi = {
     })
   },
 
-  // 执行科室下钻计算
+  // 执行科室下钻计算（自动将 timeDimension+timeValue 转为 startDate/endDate）
   executeDeptDrill(params) {
+    const { timeDimension, timeValue, ...rest } = params || {}
+    const dateRange = timeDimension && timeValue ? toDateRange(timeDimension, timeValue) : {}
     return request({
       url: '/api/indicator-result/dept-drill-down',
       method: 'post',
-      params
+      params: { timeDimension, timeValue, ...dateRange, ...rest }
     })
   },
 

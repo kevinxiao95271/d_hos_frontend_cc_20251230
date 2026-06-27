@@ -33,10 +33,21 @@ service.interceptors.response.use(
     }
 
     if (res.code !== 200) {
+      // 30401: token 失效或密码错误，需重新登录
+      if (res.code === 30401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('allowedMenuPaths')
+        ElMessage.error(res.message || '登录已过期，请重新登录')
+        setTimeout(() => { window.location.href = '/login' }, 1000)
+        return Promise.reject(new Error(res.message || '登录已过期'))
+      }
       if (!response.config.hideErrorMessage) {
         ElMessage.error(res.message || '请求失败')
       }
-      return Promise.reject(new Error(res.message || '请求失败'))
+      const err = new Error(res.message || '请求失败')
+      err.code = res.code
+      return Promise.reject(err)
     }
 
     let data = res.data
