@@ -32,18 +32,23 @@
           <!-- 质检结果汇总 -->
           <template v-if="checkResult">
             <el-divider />
-            <el-row :gutter="16" style="margin-bottom:16px">
-              <el-col :span="6">
+            <el-row :gutter="12" style="margin-bottom:16px">
+              <el-col :span="5">
                 <el-statistic title="指标总数" :value="checkResult.totalCount" />
               </el-col>
-              <el-col :span="6">
+              <el-col :span="4">
                 <el-statistic title="达标" :value="checkResult.passCount">
-                  <template #prefix><span style="color:#67c23a">✓</span></template>
+                  <template #prefix><span style="color:#67c23a">✓ </span></template>
                 </el-statistic>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="4">
                 <el-statistic title="未达标" :value="checkResult.failCount">
-                  <template #prefix><span style="color:#f56c6c">✗</span></template>
+                  <template #prefix><span style="color:#f56c6c">✗ </span></template>
+                </el-statistic>
+              </el-col>
+              <el-col :span="5">
+                <el-statistic title="监测中" :value="checkResult.monitorCount ?? monitorCount(checkResult)">
+                  <template #prefix><span style="color:#e6a23c">⚠ </span></template>
                 </el-statistic>
               </el-col>
               <el-col :span="6">
@@ -101,11 +106,13 @@
               <el-col :span="6"><el-statistic title="指标总数" :value="compliance.totalCount" /></el-col>
               <el-col :span="6">
                 <el-statistic title="达标" :value="compliance.passCount">
-                  <template #prefix><span style="color:#67c23a">✓</span></template>
+                  <template #prefix><span style="color:#67c23a">✓ </span></template>
                 </el-statistic>
               </el-col>
               <el-col :span="6">
-                <el-statistic title="未达标" :value="compliance.failCount" />
+                <el-statistic title="未达标" :value="compliance.failCount">
+                  <template #prefix><span style="color:#f56c6c">✗ </span></template>
+                </el-statistic>
               </el-col>
               <el-col :span="6">
                 <el-statistic title="未配置目标" :value="compliance.noTargetCount" />
@@ -273,6 +280,7 @@ const loadHistory = async () => {
 }
 
 // ── 标签辅助 ─────────────────────────────────────────────────
+const monitorCount = (r) => (r?.issues || []).filter(i => i.status === 'MONITOR').length
 const statusTagType = (s) => ({ PASS: 'success', FAIL: 'danger', MONITOR: 'warning', NO_TARGET: 'info', NO_RESULT: 'info' }[s] || 'info')
 const statusLabel   = (s) => ({ PASS: '达标', FAIL: '未达标', MONITOR: '监测', NO_TARGET: '未配置目标', NO_RESULT: '无结果' }[s] || s)
 const overallTagType = (s) => ({ PASS: 'success', FAIL: 'danger', NO_TARGET: 'info', UNKNOWN: 'warning' }[s] || 'info')
