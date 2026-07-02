@@ -1,127 +1,141 @@
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <h2>数据集管理</h2>
-      <p>管理D_MR等医疗数据集</p>
-    </div>
-
     <el-card>
-      <div class="table-toolbar">
-        <el-input
-          v-model="searchText"
-          placeholder="搜索表名或描述"
-          style="width: 300px"
-          clearable
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </div>
-
-      <el-table :data="filteredDatasets" border stripe>
-        <el-table-column prop="tableName" label="表名" width="180" />
-        <el-table-column prop="description" label="描述" min-width="200" />
-        <el-table-column prop="recordCount" label="记录数" width="120" align="right" />
-        <el-table-column prop="lastUpdateTime" label="最后更新时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="viewDetails(row)">
-              <el-icon><View /></el-icon>
-              查看
+      <template #header>
+        <div class="card-header">
+          <span class="card-title">数据集管理</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <el-radio-group v-model="typeFilter" size="small" @change="loadPage(1)">
+              <el-radio-button value="">全部</el-radio-button>
+              <el-radio-button value="YEAR">年度</el-radio-button>
+              <el-radio-button value="MONTH">月度</el-radio-button>
+            </el-radio-group>
+            <el-button size="small" :loading="loading" @click="loadPage(1)">
+              <el-icon><Refresh /></el-icon>刷新
             </el-button>
-            <el-button link type="success" @click="exportData(row)">
-              <el-icon><Download /></el-icon>
-              导出
+          </div>
+        </div>
+      </template>
+
+      <el-table :data="list" v-loading="loading" border stripe
+        @row-click="openDetail" style="cursor:pointer">
+        <el-table-column label="维度" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.timeDimension === 'YEAR' ? 'primary' : 'success'" size="small">
+              {{ row.timeDimension === 'YEAR' ? '年度' : '月度' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="timeValue"      label="时间值"       width="110" />
+        <el-table-column prop="startDate"      label="开始日期"     width="120" />
+        <el-table-column prop="endDate"        label="结束日期"     width="120" />
+        <el-table-column prop="indicatorCount" label="指标数"       width="80"  align="center" />
+        <el-table-column prop="latestCalcTime" label="最近计算时间" min-width="170" />
+        <el-table-column label="操作" width="90" align="center">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click.stop="openDetail(row)">
+              查看详情
             </el-button>
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        style="margin-top:12px;justify-content:flex-end;display:flex"
+        v-model:current-page="page.current"
+        v-model:page-size="page.size"
+        :total="page.total"
+        layout="total, prev, pager, next"
+        @change="loadPage"
+      />
     </el-card>
 
-    <el-dialog
-      v-model="detailVisible"
-      :title="currentDataset?.tableName"
-      width="80%"
-    >
-      <div v-if="currentDataset">
-        <h3>字段信息</h3>
-        <el-table :data="currentDataset.fields" border stripe max-height="400">
-          <el-table-column prop="fieldName" label="字段名" width="150" />
-          <el-table-column prop="fieldCode" label="字段编码" width="120" />
-          <el-table-column prop="dataType" label="数据类型" width="120" />
-          <el-table-column prop="description" label="描述" min-width="200" />
-          <el-table-column prop="required" label="必填" width="80">
+    <!-- 详情对话框 -->
+    <el-dialog v-model="detailVisible"
+      :title="`数据集详情 — ${currentDataset?.timeDimension} ${currentDataset?.timeValue}`"
+      width="860px" destroy-on-close>
+      <div v-loading="detailLoading">
+        <el-descriptions :column="3" border size="small" style="margin-bottom:16px">
+          <el-descriptions-item label="维度">{{ currentDataset?.timeDimension }}</el-descriptions-item>
+          <el-descriptions-item label="时间值">{{ currentDataset?.timeValue }}</el-descriptions-item>
+          <el-descriptions-item label="指标数">{{ currentDataset?.indicatorCount }}</el-descriptions-item>
+          <el-descriptions-item label="开始日期">{{ currentDataset?.startDate }}</el-descriptions-item>
+          <el-descriptions-item label="结束日期">{{ currentDataset?.endDate }}</el-descriptions-item>
+          <el-descriptions-item label="计算时间">{{ currentDataset?.latestCalcTime }}</el-descriptions-item>
+        </el-descriptions>
+
+        <el-table :data="detailRecords" border stripe max-height="420" size="small">
+          <el-table-column prop="metricCode"   label="指标编码"  width="170" />
+          <el-table-column prop="resultValue"  label="计算结果"  width="130" align="right">
             <template #default="{ row }">
-              <el-tag :type="row.required ? 'success' : 'info'" size="small">
-                {{ row.required ? '是' : '否' }}
-              </el-tag>
+              <span :class="row.resultValue == null ? 'text-muted' : 'text-value'">
+                {{ row.resultValue != null ? row.resultValue : '—' }}
+              </span>
             </template>
           </el-table-column>
+          <el-table-column prop="timeDimension" label="维度"     width="80"  align="center" />
+          <el-table-column prop="timeValue"     label="时间值"   width="100" />
+          <el-table-column prop="startDate"     label="开始"     width="110" />
+          <el-table-column prop="endDate"       label="结束"     width="110" />
         </el-table>
+        <div v-if="detailRecords.length === 0 && !detailLoading" style="text-align:center;color:#999;padding:20px">
+          暂无指标结果数据
+        </div>
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
+import { datasetApi } from '@/api/index'
 
-const searchText = ref('')
+const loading    = ref(false)
+const typeFilter = ref('')
+const list       = ref([])
+const page       = reactive({ current: 1, size: 10, total: 0 })
+
+const loadPage = async (p) => {
+  if (typeof p === 'number') page.current = p
+  loading.value = true
+  try {
+    const params = { current: page.current, size: page.size }
+    if (typeFilter.value) params.type = typeFilter.value
+    const res = await datasetApi.getPage(params)
+    list.value  = res?.records || []
+    page.total  = res?.total   || 0
+  } catch (e) { ElMessage.error(e.message) }
+  finally { loading.value = false }
+}
+
+// 详情
 const detailVisible = ref(false)
+const detailLoading = ref(false)
 const currentDataset = ref(null)
+const detailRecords  = ref([])
 
-const datasets = ref([
-  {
-    tableName: 'D_MR',
-    description: '病案首页主表',
-    recordCount: 3,
-    lastUpdateTime: '2023-12-30 10:30:00',
-    fields: [
-      { fieldName: '患者ID', fieldCode: 'A48', dataType: 'VARCHAR', description: '患者唯一标识', required: true },
-      { fieldName: '住院号', fieldCode: 'A49', dataType: 'VARCHAR', description: '住院唯一标识', required: true },
-      { fieldName: '性别', fieldCode: 'A02', dataType: 'VARCHAR', description: '1-男, 2-女', required: true },
-      { fieldName: '年龄', fieldCode: 'A14', dataType: 'INT', description: '患者年龄', required: false },
-      { fieldName: '入院日期', fieldCode: 'B14', dataType: 'DATE', description: '入院日期', required: true },
-      { fieldName: '出院日期', fieldCode: 'B15', dataType: 'DATE', description: '出院日期', required: true },
-      { fieldName: '住院天数', fieldCode: 'B20', dataType: 'INT', description: '实际住院天数', required: false },
-      { fieldName: '主要诊断', fieldCode: 'C03C', dataType: 'VARCHAR', description: 'ICD-10诊断编码', required: true },
-      { fieldName: '出院情况', fieldCode: 'B34C', dataType: 'VARCHAR', description: '1-治愈, 5-死亡等', required: false },
-      { fieldName: '总费用', fieldCode: 'D01', dataType: 'DECIMAL', description: '住院总费用', required: false }
-    ]
-  },
-  {
-    tableName: 'D_MR_OTHER_1_20',
-    description: '病案首页附表(1-20)',
-    recordCount: 5,
-    lastUpdateTime: '2023-12-30 10:30:00',
-    fields: [
-      { fieldName: '患者ID', fieldCode: 'A48', dataType: 'VARCHAR', description: '患者唯一标识', required: true },
-      { fieldName: '住院号', fieldCode: 'A49', dataType: 'VARCHAR', description: '住院唯一标识', required: true },
-      { fieldName: '手术编码1', fieldCode: 'C35x01C', dataType: 'VARCHAR', description: 'ICD-9手术编码', required: false },
-      { fieldName: '手术编码2', fieldCode: 'C35x02C', dataType: 'VARCHAR', description: 'ICD-9手术编码', required: false },
-      { fieldName: '切口等级1', fieldCode: 'C42x01C', dataType: 'VARCHAR', description: '1-I类, 2-II类, 3-III类', required: false }
-    ]
-  }
-])
-
-const filteredDatasets = computed(() => {
-  if (!searchText.value) {
-    return datasets.value
-  }
-  return datasets.value.filter(item =>
-    item.tableName.toLowerCase().includes(searchText.value.toLowerCase()) ||
-    item.description.includes(searchText.value)
-  )
-})
-
-const viewDetails = (row) => {
+const openDetail = async (row) => {
   currentDataset.value = row
-  detailVisible.value = true
+  detailVisible.value  = true
+  detailRecords.value  = []
+  detailLoading.value  = true
+  try {
+    const dsId = `${row.timeDimension}_${row.timeValue}`
+    const res  = await datasetApi.getById(dsId)
+    detailRecords.value = res?.records || []
+  } catch (e) { ElMessage.error(e.message) }
+  finally { detailLoading.value = false }
 }
 
-const exportData = (row) => {
-  ElMessage.success(`开始导出 ${row.tableName} 数据`)
-}
+onMounted(() => loadPage(1))
 </script>
+
+<style scoped lang="scss">
+.page-container { padding: 20px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.card-title  { font-weight: 600; }
+.text-value  { font-family: monospace; color: #303133; }
+.text-muted  { color: #c0c4cc; }
+</style>

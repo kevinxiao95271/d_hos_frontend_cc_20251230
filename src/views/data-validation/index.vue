@@ -1,165 +1,301 @@
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <h2>数据校验</h2>
-      <p>对D_MR数据进行规则引擎校验,检查数据质量问题</p>
-    </div>
+    <el-tabs v-model="activeTab">
+      <!-- Tab1：触发质检 -->
+      <el-tab-pane label="指标质检" name="check">
+        <el-card>
+          <template #header><span class="card-title">触发质检</span></template>
 
-    <el-card>
-      <div class="table-toolbar">
-        <el-form :inline="true" :model="queryForm">
-          <el-form-item label="时间范围">
-            <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
+          <el-form :model="checkForm" inline>
+            <el-form-item label="时间维度">
+              <el-select v-model="checkForm.timeDimension" style="width:110px" clearable placeholder="不限">
+                <el-option label="年度" value="YEAR" />
+                <el-option label="月度" value="MONTH" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="时间值">
+              <el-input v-model="checkForm.timeValue" placeholder="如 2020 / 2025-06"
+                style="width:130px" clearable />
+            </el-form-item>
+            <el-form-item label="指标范围">
+              <el-select v-model="checkForm.metricCodes" multiple filterable
+                collapse-tags placeholder="全部指标（不选=全量）" style="width:220px" clearable>
+                <el-option v-for="m in metricList" :key="m.metricCode"
+                  :label="m.metricName" :value="m.metricCode" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" :loading="checking" @click="runCheck">执行质检</el-button>
+            </el-form-item>
+          </el-form>
+
+          <!-- 质检结果汇总 -->
+          <template v-if="checkResult">
+            <el-divider />
+            <el-row :gutter="16" style="margin-bottom:16px">
+              <el-col :span="6">
+                <el-statistic title="指标总数" :value="checkResult.totalCount" />
+              </el-col>
+              <el-col :span="6">
+                <el-statistic title="达标" :value="checkResult.passCount">
+                  <template #prefix><span style="color:#67c23a">✓</span></template>
+                </el-statistic>
+              </el-col>
+              <el-col :span="6">
+                <el-statistic title="未达标" :value="checkResult.failCount">
+                  <template #prefix><span style="color:#f56c6c">✗</span></template>
+                </el-statistic>
+              </el-col>
+              <el-col :span="6">
+                <div class="overall-status">
+                  <div class="label">整体状态</div>
+                  <el-tag :type="overallTagType(checkResult.overallStatus)" size="large">
+                    {{ overallLabel(checkResult.overallStatus) }}
+                  </el-tag>
+                </div>
+              </el-col>
+            </el-row>
+
+            <el-table :data="checkResult.issues" border stripe max-height="480"
+              :row-class-name="issueRowClass">
+              <el-table-column prop="metricCode" label="指标编码" width="160" />
+              <el-table-column prop="metricName" label="指标名称" min-width="180" show-overflow-tooltip />
+              <el-table-column label="状态" width="110" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="statusTagType(row.status)" size="small">
+                    {{ statusLabel(row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="resultValue" label="计算值" width="110" align="right">
+                <template #default="{ row }">
+                  {{ row.resultValue != null ? row.resultValue : '-' }}
+                  <span v-if="row.unit" style="color:#999;font-size:12px"> {{ row.unit }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="targetValue" label="目标值" width="100" align="right">
+                <template #default="{ row }">
+                  {{ row.targetValue != null ? row.targetValue : '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="message" label="说明" min-width="200" show-overflow-tooltip />
+            </el-table>
+          </template>
+
+          <el-empty v-else description="选择时间后点击「执行质检」" :image-size="80" />
+        </el-card>
+
+        <!-- 达标率汇总 -->
+        <el-card style="margin-top:16px">
+          <template #header>
+            <div class="card-header">
+              <span class="card-title">达标率汇总</span>
+              <el-button size="small" :loading="loadingCompliance" @click="loadCompliance">
+                刷新
+              </el-button>
+            </div>
+          </template>
+
+          <div v-if="compliance" class="compliance-summary">
+            <el-row :gutter="16" style="margin-bottom:16px">
+              <el-col :span="6"><el-statistic title="指标总数" :value="compliance.totalCount" /></el-col>
+              <el-col :span="6">
+                <el-statistic title="达标" :value="compliance.passCount">
+                  <template #prefix><span style="color:#67c23a">✓</span></template>
+                </el-statistic>
+              </el-col>
+              <el-col :span="6">
+                <el-statistic title="未达标" :value="compliance.failCount" />
+              </el-col>
+              <el-col :span="6">
+                <el-statistic title="未配置目标" :value="compliance.noTargetCount" />
+              </el-col>
+            </el-row>
+            <el-progress
+              :percentage="parseFloat(compliance.complianceRate)"
+              :format="() => compliance.complianceRate"
+              :stroke-width="18"
+              status="success"
             />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="runValidation" :loading="loading">
-              <el-icon><Finished /></el-icon>
-              执行校验
-            </el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div v-if="validationResult" class="validation-result">
-        <div class="error-summary">
-          <div class="total-error">
-            总错误数: {{ validationResult.totalErrors }}
+            <el-table :data="compliance.items" border stripe style="margin-top:16px"
+              max-height="360">
+              <el-table-column prop="metricCode" label="编码" width="140" />
+              <el-table-column prop="metricName" label="名称" min-width="160" show-overflow-tooltip />
+              <el-table-column prop="resultValue" label="计算值" width="100" align="right">
+                <template #default="{ row }">
+                  {{ row.resultValue != null ? row.resultValue : '-' }}
+                  <span v-if="row.unit" style="color:#999;font-size:12px"> {{ row.unit }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="targetValue" label="目标值" width="90" align="right">
+                <template #default="{ row }">{{ row.targetValue ?? '-' }}</template>
+              </el-table-column>
+              <el-table-column label="达标" width="90" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="statusTagType(row.complianceStatus)" size="small">
+                    {{ statusLabel(row.complianceStatus) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
-          <div style="margin-top: 8px; color: #666;">
-            校验时间: {{ validationResult.checkTime }}
-          </div>
-        </div>
+          <el-empty v-else description="加载中..." :image-size="60" />
+        </el-card>
+      </el-tab-pane>
 
-        <el-divider />
+      <!-- Tab2：质检历史 -->
+      <el-tab-pane label="质检历史" name="history">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span class="card-title">历史质检记录</span>
+              <el-select v-model="historyDim" style="width:110px" size="small"
+                clearable placeholder="全部" @change="loadHistory">
+                <el-option label="年度" value="YEAR" />
+                <el-option label="月度" value="MONTH" />
+              </el-select>
+            </div>
+          </template>
 
-        <h3 style="margin-bottom: 16px;">字段错误统计</h3>
+          <el-table :data="historyList" v-loading="historyLoading" border stripe>
+            <el-table-column prop="timeDimension" label="维度" width="80" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" type="info">{{ row.timeDimension }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="timeValue"     label="时间值"   width="100" />
+            <el-table-column prop="resultCount"   label="指标数"   width="80"  align="center" />
+            <el-table-column prop="passCount"     label="达标"     width="70"  align="center">
+              <template #default="{ row }">
+                <span style="color:#67c23a">{{ row.passCount }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="failCount"     label="未达标"   width="70"  align="center">
+              <template #default="{ row }">
+                <span style="color:#f56c6c">{{ row.failCount }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="整体状态" width="110" align="center">
+              <template #default="{ row }">
+                <el-tag :type="overallTagType(row.overallStatus)" size="small">
+                  {{ overallLabel(row.overallStatus) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="checkTime" label="质检时间" min-width="160" />
+          </el-table>
 
-        <div class="field-error-list">
-          <div
-            v-for="item in validationResult.fieldErrors"
-            :key="item.fieldName"
-            class="field-error-item"
-          >
-            <span class="field-name">{{ item.fieldName }}</span>
-            <span class="error-count">{{ item.errorCount }} 条</span>
-          </div>
-        </div>
-
-        <el-divider />
-
-        <h3 style="margin-bottom: 16px;">错误明细</h3>
-
-        <el-table :data="validationResult.errorDetails" border stripe>
-          <el-table-column prop="patientId" label="患者ID" width="120" />
-          <el-table-column prop="admissionNo" label="住院号" width="120" />
-          <el-table-column prop="fieldName" label="字段名称" width="150" />
-          <el-table-column prop="errorType" label="错误类型" width="120">
-            <template #default="{ row }">
-              <el-tag :type="getErrorTypeTag(row.errorType)">
-                {{ row.errorType }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="errorMessage" label="错误描述" min-width="200" />
-          <el-table-column prop="currentValue" label="当前值" width="150" />
-        </el-table>
-      </div>
-
-      <el-empty v-else description="请点击执行校验按钮开始数据质检" />
-    </el-card>
+          <el-pagination
+            style="margin-top:12px;justify-content:flex-end;display:flex"
+            v-model:current-page="historyPage.current"
+            v-model:page-size="historyPage.size"
+            :total="historyPage.total"
+            layout="total, prev, pager, next"
+            @change="loadHistory"
+          />
+        </el-card>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import dayjs from 'dayjs'
+import { dataValidationApi, complianceApi, indicatorApi } from '@/api/index'
 
-const loading = ref(false)
-const dateRange = ref([])
-const queryForm = reactive({})
+const activeTab = ref('check')
 
-const validationResult = ref(null)
+// ── 质检 ──────────────────────────────────────────────────────
+const checking    = ref(false)
+const checkResult = ref(null)
+const metricList  = ref([])
+const checkForm   = reactive({ timeDimension: 'YEAR', timeValue: '2020', metricCodes: [] })
 
-const runValidation = async () => {
-  if (!dateRange.value || dateRange.value.length !== 2) {
-    ElMessage.warning('请选择时间范围')
-    return
-  }
-
-  loading.value = true
-
+const runCheck = async () => {
+  checking.value = true
   try {
-    // 模拟数据校验结果
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    validationResult.value = {
-      totalErrors: 15,
-      checkTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      fieldErrors: [
-        { fieldName: 'A02-性别', errorCount: 3 },
-        { fieldName: 'A14-年龄', errorCount: 2 },
-        { fieldName: 'B20-住院天数', errorCount: 5 },
-        { fieldName: 'C03C-主要诊断', errorCount: 3 },
-        { fieldName: 'D01-总费用', errorCount: 2 }
-      ],
-      errorDetails: [
-        {
-          patientId: '001',
-          admissionNo: 'H2023001',
-          fieldName: 'A02-性别',
-          errorType: '必填项缺失',
-          errorMessage: '性别字段不能为空',
-          currentValue: ''
-        },
-        {
-          patientId: '002',
-          admissionNo: 'H2023002',
-          fieldName: 'A14-年龄',
-          errorType: '数值范围异常',
-          errorMessage: '年龄必须在0-150之间',
-          currentValue: '200'
-        },
-        {
-          patientId: '003',
-          admissionNo: 'H2023003',
-          fieldName: 'B20-住院天数',
-          errorType: '逻辑错误',
-          errorMessage: '住院天数不能为负数',
-          currentValue: '-5'
-        }
-      ]
+    const params = {}
+    if (checkForm.timeDimension && checkForm.timeValue) {
+      params.timeDimension = checkForm.timeDimension
+      params.timeValue     = checkForm.timeValue
     }
-
-    ElMessage.success('数据校验完成')
-  } catch (error) {
-    ElMessage.error('数据校验失败')
-    console.error(error)
-  } finally {
-    loading.value = false
-  }
+    if (checkForm.metricCodes?.length) params.metricCodes = checkForm.metricCodes
+    checkResult.value = await dataValidationApi.check(params)
+    loadCompliance()
+  } catch (e) { ElMessage.error(e.message || '质检失败') }
+  finally { checking.value = false }
 }
 
-const getErrorTypeTag = (type) => {
-  const map = {
-    '必填项缺失': 'danger',
-    '数值范围异常': 'warning',
-    '逻辑错误': 'danger',
-    '格式错误': 'warning'
-  }
-  return map[type] || 'info'
+const loadMetrics = async () => {
+  try {
+    const tree = await indicatorApi.getTree()
+    const flat = []
+    const walk = (nodes) => nodes?.forEach(n => { if (n.isLeaf === 1) flat.push(n); walk(n.children) })
+    walk(tree)
+    metricList.value = flat
+  } catch {}
 }
+
+// ── 达标率 ────────────────────────────────────────────────────
+const compliance        = ref(null)
+const loadingCompliance = ref(false)
+
+const loadCompliance = async () => {
+  loadingCompliance.value = true
+  try {
+    const params = {}
+    if (checkForm.timeDimension && checkForm.timeValue) {
+      params.timeDimension = checkForm.timeDimension
+      params.timeValue     = checkForm.timeValue
+    }
+    compliance.value = await complianceApi.get(params)
+  } catch (e) { ElMessage.error(e.message) }
+  finally { loadingCompliance.value = false }
+}
+
+// ── 历史 ──────────────────────────────────────────────────────
+const historyList    = ref([])
+const historyLoading = ref(false)
+const historyDim     = ref('')
+const historyPage    = reactive({ current: 1, size: 10, total: 0 })
+
+const loadHistory = async () => {
+  historyLoading.value = true
+  try {
+    const params = { current: historyPage.current, size: historyPage.size }
+    if (historyDim.value) params.timeDimension = historyDim.value
+    const res = await dataValidationApi.getHistory(params)
+    historyList.value  = res?.records || []
+    historyPage.total  = res?.total   || 0
+  } catch (e) { ElMessage.error(e.message) }
+  finally { historyLoading.value = false }
+}
+
+// ── 标签辅助 ─────────────────────────────────────────────────
+const statusTagType = (s) => ({ PASS: 'success', FAIL: 'danger', MONITOR: 'warning', NO_TARGET: 'info', NO_RESULT: 'info' }[s] || 'info')
+const statusLabel   = (s) => ({ PASS: '达标', FAIL: '未达标', MONITOR: '监测', NO_TARGET: '未配置目标', NO_RESULT: '无结果' }[s] || s)
+const overallTagType = (s) => ({ PASS: 'success', FAIL: 'danger', NO_TARGET: 'info', UNKNOWN: 'warning' }[s] || 'info')
+const overallLabel   = (s) => ({ PASS: '全部达标', FAIL: '存在未达标', NO_TARGET: '未配置目标', UNKNOWN: '未知' }[s] || s)
+
+const issueRowClass = ({ row }) => {
+  if (row.status === 'FAIL') return 'row-fail'
+  if (row.status === 'PASS') return 'row-pass'
+  return ''
+}
+
+onMounted(() => { loadMetrics(); loadCompliance(); loadHistory() })
 </script>
 
 <style scoped lang="scss">
-.validation-result {
-  margin-top: 20px;
+.page-container { padding: 20px; }
+.card-title { font-weight: 600; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.overall-status {
+  .label { font-size: 13px; color: #909399; margin-bottom: 8px; }
 }
+.compliance-summary { padding: 4px 0; }
+
+:deep(.row-fail td) { background-color: #fff0f0 !important; }
+:deep(.row-pass td) { background-color: #f0fff4 !important; }
 </style>

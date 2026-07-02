@@ -160,22 +160,35 @@ export const indicatorResultApi = {
 }
 
 export const dataValidationApi = {
-  // 数据质检
-  validate(params) {
-    return request({
-      url: '/api/data-validation/check',
-      method: 'post',
-      params
-    })
+  check(params) {
+    return request({ url: '/api/data-validation/check', method: 'post', data: params })
   },
-
-  // 获取质检历史
   getHistory(params) {
-    return request({
-      url: '/api/data-validation/history',
-      method: 'get',
-      params
-    })
+    return request({ url: '/api/data-validation/history', method: 'get', params })
+  }
+}
+
+export const complianceApi = {
+  get(params) {
+    return request({ url: '/api/indicator-result/compliance', method: 'get', params })
+  }
+}
+
+export const datasetApi = {
+  getPage(params) {
+    return request({ url: '/api/dataset/page', method: 'get', params })
+  },
+  getList(params) {
+    return request({ url: '/api/dataset/list', method: 'get', params })
+  },
+  getById(id) {
+    return request({ url: `/api/dataset/${id}`, method: 'get' })
+  }
+}
+
+export const compareApi = {
+  compare(params) {
+    return request({ url: '/api/indicator-result/compare', method: 'get', params })
   }
 }
 

@@ -62,6 +62,12 @@ const routes = [
         meta: { title: '指标统计看板', icon: 'DataLine', menuGroup: 'indicator' }
       },
       {
+        path: 'indicator-compare',
+        name: 'IndicatorCompare',
+        component: () => import('@/views/indicator-compare/index.vue'),
+        meta: { title: '指标对比分析', icon: 'TrendCharts', menuGroup: 'indicator' }
+      },
+      {
         path: 'indicator-scope',
         name: 'IndicatorScope',
         component: () => import('@/views/indicator-scope/index.vue'),
