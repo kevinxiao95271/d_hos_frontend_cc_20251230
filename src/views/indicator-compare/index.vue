@@ -161,11 +161,15 @@ const runTrend = async () => {
       timeDimension: trendForm.timeDimension,
       timeValues:    trendForm.timeValues.join(',')
     })
-    trendData.value = res
-    await nextTick()
+    trendData.value    = res
+    trendLoading.value = false          // 先关 loading，让图表 div 渲染进 DOM
+    await nextTick()                    // 等 v-else-if 切换完成
+    await new Promise(r => setTimeout(r, 50))  // 等浏览器完成布局计算
     renderTrendChart(res)
-  } catch (e) { ElMessage.error(e.message) }
-  finally { trendLoading.value = false }
+  } catch (e) {
+    ElMessage.error(e.message)
+    trendLoading.value = false
+  }
 }
 
 const renderTrendChart = (res) => {
@@ -194,6 +198,7 @@ const renderTrendChart = (res) => {
     }],
     grid: { left: 60, right: 30, bottom: 60 }
   })
+  trendChart.resize()
 }
 
 // ── 横向对比 ────────────────────────────────────────────────
@@ -223,11 +228,15 @@ const runCross = async () => {
       timeDimension: crossForm.timeDimension,
       timeValue:     crossForm.timeValue
     })
-    crossData.value = res
+    crossData.value    = res
+    crossLoading.value = false          // 先关 loading，让图表 div 渲染进 DOM
     await nextTick()
+    await new Promise(r => setTimeout(r, 50))
     renderCrossChart(res)
-  } catch (e) { ElMessage.error(e.message) }
-  finally { crossLoading.value = false }
+  } catch (e) {
+    ElMessage.error(e.message)
+    crossLoading.value = false
+  }
 }
 
 const renderCrossChart = (res) => {
@@ -257,6 +266,7 @@ const renderCrossChart = (res) => {
     }],
     grid: { left: 60, right: 30, bottom: 90 }
   })
+  crossChart.resize()
 }
 
 // ── 工具 ──────────────────────────────────────────────────
@@ -269,6 +279,8 @@ const clearChart = () => {
   trendData.value = null; crossData.value = null
   destroyChart('trend'); destroyChart('cross')
 }
+
+const onResize = () => { trendChart?.resize(); crossChart?.resize() }
 
 const loadInitData = async () => {
   try {
@@ -287,8 +299,8 @@ const loadInitData = async () => {
 watch(() => trendForm.timeDimension, () => { trendForm.timeValues = []; clearChart() })
 watch(() => crossForm.timeDimension, () => { crossForm.timeValue  = '';  clearChart() })
 
-onMounted(loadInitData)
-onUnmounted(() => { destroyChart('trend'); destroyChart('cross') })
+onMounted(() => { loadInitData(); window.addEventListener('resize', onResize) })
+onUnmounted(() => { destroyChart('trend'); destroyChart('cross'); window.removeEventListener('resize', onResize) })
 </script>
 
 <style scoped lang="scss">
