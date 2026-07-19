@@ -32,17 +32,16 @@
           <el-tree
             :data="treeData"
             :props="treeProps"
-            node-key="id"
+            node-key="metricCode"
             default-expand-all
-            :highlight-current="true"
-            @node-click="handleNodeClick"
+            highlight-current
             v-loading="loading"
           >
             <template #default="{ data }">
-              <span class="tree-node">
-                <el-tag v-if="data.isLeaf === 1"    type="success" size="small" style="margin-right:4px">末级</el-tag>
+              <span class="tree-node" @click="handleNodeClick(data)">
+                <el-tag v-if="data.isLeaf === 1"         type="success" size="small" style="margin-right:4px">末级</el-tag>
                 <el-tag v-if="data.inputType==='MANUAL'" type="warning" size="small" style="margin-right:4px">手工</el-tag>
-                <el-tag v-if="data.supportDeptDrill===1" type="info" size="small" style="margin-right:4px">可下钻</el-tag>
+                <el-tag v-if="data.supportDeptDrill===1" type="info"    size="small" style="margin-right:4px">可下钻</el-tag>
                 {{ data.metricName }}
               </span>
             </template>
@@ -178,8 +177,8 @@
           <el-col :span="12">
             <el-form-item label="是否末级" prop="isLeaf">
               <el-radio-group v-model="formData.isLeaf" @change="onLeafChange">
-                <el-radio :value="1">末级节点</el-radio>
-                <el-radio :value="0">非末级节点</el-radio>
+                <el-radio :label="1">末级节点</el-radio>
+                <el-radio :label="0">非末级节点</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -199,8 +198,8 @@
 
           <el-form-item label="录入方式" prop="inputType">
             <el-radio-group v-model="formData.inputType" @change="onInputTypeChange">
-              <el-radio-button value="AUTO">自动采集</el-radio-button>
-              <el-radio-button value="MANUAL">手工填报</el-radio-button>
+              <el-radio-button label="AUTO">自动采集</el-radio-button>
+              <el-radio-button label="MANUAL">手工填报</el-radio-button>
             </el-radio-group>
             <div class="hint">
               自动采集：需配置计算表达式/指标项；手工填报：计算类型固定为「无」
@@ -301,8 +300,8 @@
           <el-col :span="8">
             <el-form-item label="科室下钻">
               <el-radio-group v-model="formData.supportDeptDrill">
-                <el-radio :value="1">是</el-radio>
-                <el-radio :value="0">否</el-radio>
+                <el-radio :label="1">是</el-radio>
+                <el-radio :label="0">否</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
