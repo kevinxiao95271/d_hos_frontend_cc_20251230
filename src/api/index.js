@@ -52,8 +52,8 @@ export const indicatorItemApi = {
 }
 
 export const indicatorApi = {
-  getTree() {
-    return request({ url: '/api/indicator/tree', method: 'get' })
+  getTree(params) {
+    return request({ url: '/api/indicator/tree', method: 'get', params })
   },
 
   getPage(params) {

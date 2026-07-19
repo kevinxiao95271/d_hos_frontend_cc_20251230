@@ -17,9 +17,16 @@
               <el-input v-model="checkForm.timeValue" placeholder="如 2020 / 2025-06"
                 style="width:130px" clearable />
             </el-form-item>
+            <el-form-item label="指标池">
+              <el-select v-model="checkForm.metricPool" style="width:140px" clearable placeholder="全部">
+                <el-option label="国家级"     value="POOL_NATIONAL" />
+                <el-option label="省级"       value="POOL_PROVINCIAL" />
+                <el-option label="医院自定义" value="POOL_LOCAL" />
+              </el-select>
+            </el-form-item>
             <el-form-item label="指标范围">
               <el-select v-model="checkForm.metricCodes" multiple filterable
-                collapse-tags placeholder="全部指标（不选=全量）" style="width:220px" clearable>
+                collapse-tags placeholder="全部指标（不选=全量）" style="width:200px" clearable>
                 <el-option v-for="m in metricList" :key="m.metricCode"
                   :label="m.metricName" :value="m.metricCode" />
               </el-select>
@@ -217,7 +224,7 @@ const activeTab = ref('check')
 const checking    = ref(false)
 const checkResult = ref(null)
 const metricList  = ref([])
-const checkForm   = reactive({ timeDimension: 'YEAR', timeValue: '2020', metricCodes: [] })
+const checkForm   = reactive({ timeDimension: 'YEAR', timeValue: '2020', metricPool: '', metricCodes: [] })
 
 const runCheck = async () => {
   checking.value = true
@@ -227,6 +234,7 @@ const runCheck = async () => {
       params.timeDimension = checkForm.timeDimension
       params.timeValue     = checkForm.timeValue
     }
+    if (checkForm.metricPool)    params.metricPool  = checkForm.metricPool
     if (checkForm.metricCodes?.length) params.metricCodes = checkForm.metricCodes
     checkResult.value = await dataValidationApi.check(params)
     loadCompliance()
@@ -256,6 +264,7 @@ const loadCompliance = async () => {
       params.timeDimension = checkForm.timeDimension
       params.timeValue     = checkForm.timeValue
     }
+    if (checkForm.metricPool) params.metricPool = checkForm.metricPool
     compliance.value = await complianceApi.get(params)
   } catch (e) { ElMessage.error(e.message) }
   finally { loadingCompliance.value = false }

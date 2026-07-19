@@ -18,6 +18,17 @@
             </div>
           </template>
 
+          <!-- 指标池过滤 -->
+          <div style="margin-bottom:10px">
+            <el-select v-model="treeFilter.metricPool" placeholder="全部指标池" clearable
+              size="small" style="width:100%" @change="loadTree()">
+              <el-option label="全部指标池" value="" />
+              <el-option label="国家级（POOL_NATIONAL）"    value="POOL_NATIONAL" />
+              <el-option label="省级（POOL_PROVINCIAL）"   value="POOL_PROVINCIAL" />
+              <el-option label="医院自定义（POOL_LOCAL）"   value="POOL_LOCAL" />
+            </el-select>
+          </div>
+
           <el-tree
             :data="treeData"
             :props="treeProps"
@@ -318,6 +329,7 @@ const selectedNode   = ref(null)
 const dialogVisible  = ref(false)
 const submitLoading  = ref(false)
 const formRef        = ref(null)
+const treeFilter     = reactive({ metricPool: '' })
 
 const exprValidating  = ref(false)
 const exprValidResult = ref('')
@@ -397,7 +409,8 @@ const validateExpression = async () => {
 const loadTree = async (showMsg = false) => {
   loading.value = true
   try {
-    treeData.value = await indicatorApi.getTree()
+    const params = treeFilter.metricPool ? { metricPool: treeFilter.metricPool } : {}
+    treeData.value = await indicatorApi.getTree(params)
     if (showMsg) ElMessage.success('刷新成功')
   } catch { ElMessage.error('加载指标树失败') }
   finally { loading.value = false }

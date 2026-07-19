@@ -42,9 +42,10 @@
           <el-col :span="8">
             <el-form-item label="指标池">
               <el-select v-model="monthlyForm.metricPool" placeholder="全部" clearable style="width: 100%">
-                <el-option label="全部指标" value="" />
-                <el-option label="国家标准池" value="POOL_NATIONAL" />
-                <el-option label="等级评审池" value="POOL_GRADE" />
+                <el-option label="全部指标"           value="" />
+                <el-option label="国家级"  value="POOL_NATIONAL" />
+                <el-option label="省级"    value="POOL_PROVINCIAL" />
+                <el-option label="医院自定义" value="POOL_LOCAL" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -92,9 +93,10 @@
           <el-col :span="8">
             <el-form-item label="指标池">
               <el-select v-model="annualForm.metricPool" placeholder="全部" clearable style="width: 100%">
-                <el-option label="全部指标" value="" />
-                <el-option label="国家标准池" value="POOL_NATIONAL" />
-                <el-option label="等级评审池" value="POOL_GRADE" />
+                <el-option label="全部指标"           value="" />
+                <el-option label="国家级"  value="POOL_NATIONAL" />
+                <el-option label="省级"    value="POOL_PROVINCIAL" />
+                <el-option label="医院自定义" value="POOL_LOCAL" />
               </el-select>
             </el-form-item>
           </el-col>
