@@ -499,10 +499,24 @@ const submitForm = async () => {
     // 更新时带 id，不修改 metricCode
     if (formData.id) payload.id = formData.id
 
-    await indicatorApi.save(payload)
+    const saveRes = await indicatorApi.save(payload)
     ElMessage.success(formData.id ? '更新成功' : '新增成功')
     dialogVisible.value = false
     await loadTree()
+
+    // 刷新右侧详情：找到保存后的节点（用 id 或 metricCode 定位）
+    const savedId   = saveRes?.id   ?? formData.id
+    const savedCode = saveRes?.metricCode ?? formData.metricCode
+    const findNode = (nodes, id, code) => {
+      for (const n of nodes || []) {
+        if ((id && n.id === id) || (code && n.metricCode === code)) return n
+        const hit = findNode(n.children, id, code)
+        if (hit) return hit
+      }
+      return null
+    }
+    const refreshed = findNode(treeData.value, savedId, savedCode)
+    if (refreshed) selectedNode.value = refreshed
   } catch (err) {
     const codeMap = {
       304095: '指标编码已存在，请更换编码',
