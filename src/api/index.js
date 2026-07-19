@@ -81,6 +81,10 @@ export const indicatorApi = {
     return request({ url: `/api/indicator/${id}`, method: 'delete' })
   },
 
+  batchDelete(ids) {
+    return request({ url: '/api/indicator/batch', method: 'delete', data: ids })
+  },
+
   // 校验计算表达式
   validateExpression(data) {
     return request({ url: '/api/indicator/validate-expression', method: 'post', data })
