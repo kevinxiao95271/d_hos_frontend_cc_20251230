@@ -415,7 +415,13 @@ const loadTree = async (showMsg = false) => {
   finally { loading.value = false }
 }
 
-const handleNodeClick = (data) => { selectedNode.value = data }
+const handleNodeClick = async (data) => {
+  selectedNode.value = data   // 先显示树节点基础数据，避免右侧空白
+  try {
+    const full = await indicatorApi.getDetail(data.id)
+    if (full) selectedNode.value = full
+  } catch { /* 降级保留树节点数据 */ }
+}
 
 const resetForm = () => {
   Object.assign(formData, {
@@ -429,33 +435,43 @@ const resetForm = () => {
   formRef.value?.clearValidate()
 }
 
-const openDialog = (node = null) => {
+const fillForm = (node) => {
+  const relItems = parseRelatedItems(node.relatedItems)
+  Object.assign(formData, {
+    id:                   node.id,
+    parentCode:           node.parentCode || '',
+    metricCode:           node.metricCode,
+    metricName:           node.metricName,
+    isLeaf:               node.isLeaf,
+    metricType:           node.metricType || 'QUANTITATIVE',
+    inputType:            node.inputType  || 'AUTO',
+    calculationType:      node.calculationType || 'NONE',
+    expression:           node.expression || '',
+    relatedItemsInput:    relItems.join(','),
+    unit:                 node.unit || '',
+    metricPool:           node.metricPool || '',
+    metricCategory:       node.metricCategory || '',
+    businessDirectionArr: node.businessDirection ? node.businessDirection.split(',') : [],
+    targetValue:          node.targetValue ?? null,
+    monitorDirection:     node.monitorDirection || '',
+    supportDeptDrill:     node.supportDeptDrill || 0,
+    sortOrder:            node.sortOrder ?? 100,
+    status:               node.status ?? 1
+  })
+}
+
+const openDialog = async (node = null) => {
   resetForm()
-  if (node) {
-    const relItems = parseRelatedItems(node.relatedItems)
-    Object.assign(formData, {
-      id:                   node.id,
-      parentCode:           node.parentCode || '',
-      metricCode:           node.metricCode,
-      metricName:           node.metricName,
-      isLeaf:               node.isLeaf,
-      metricType:           node.metricType || 'QUANTITATIVE',
-      inputType:            node.inputType  || 'AUTO',
-      calculationType:      node.calculationType || 'NONE',
-      expression:           node.expression || '',
-      relatedItemsInput:    relItems.join(','),
-      unit:                 node.unit || '',
-      metricPool:           node.metricPool || '',
-      metricCategory:       node.metricCategory || '',
-      businessDirectionArr: node.businessDirection ? node.businessDirection.split(',') : [],
-      targetValue:          node.targetValue ?? null,
-      monitorDirection:     node.monitorDirection || '',
-      supportDeptDrill:     node.supportDeptDrill || 0,
-      sortOrder:            node.sortOrder ?? 100,
-      status:               node.status ?? 1
-    })
-  }
   dialogVisible.value = true
+  if (node) {
+    // 树节点只含精简字段，需取完整详情才能回填 metricPool/metricCategory 等扩展字段
+    try {
+      const full = await indicatorApi.getDetail(node.id)
+      fillForm(full || node)
+    } catch {
+      fillForm(node)   // 取详情失败时降级用树节点数据
+    }
+  }
 }
 
 const submitForm = async () => {
