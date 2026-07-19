@@ -18,10 +18,10 @@
                 style="width:130px" clearable />
             </el-form-item>
             <el-form-item label="指标池">
-              <el-select v-model="checkForm.metricPool" style="width:140px" clearable placeholder="全部">
-                <el-option label="国家级"     value="POOL_NATIONAL" />
-                <el-option label="省级"       value="POOL_PROVINCIAL" />
-                <el-option label="医院自定义" value="POOL_LOCAL" />
+              <el-select v-model="checkForm.metricPool" style="width:150px" clearable placeholder="全部">
+                <el-option label="国考指标池"    value="POOL_NATIONAL" />
+                <el-option label="等级评审指标池" value="POOL_GRADE" />
+                <el-option label="医院自定义"    value="POOL_LOCAL" />
               </el-select>
             </el-form-item>
             <el-form-item label="指标范围">

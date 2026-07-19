@@ -22,10 +22,10 @@
           <div style="margin-bottom:10px">
             <el-select v-model="treeFilter.metricPool" placeholder="全部指标池" clearable
               size="small" style="width:100%" @change="loadTree()">
-              <el-option label="全部指标池" value="" />
-              <el-option label="国家级（POOL_NATIONAL）"    value="POOL_NATIONAL" />
-              <el-option label="省级（POOL_PROVINCIAL）"   value="POOL_PROVINCIAL" />
-              <el-option label="医院自定义（POOL_LOCAL）"   value="POOL_LOCAL" />
+              <el-option label="全部指标池"          value="" />
+              <el-option label="国考指标池"          value="POOL_NATIONAL" />
+              <el-option label="等级评审指标池"      value="POOL_GRADE" />
+              <el-option label="医院自定义"          value="POOL_LOCAL" />
             </el-select>
           </div>
 
@@ -241,9 +241,9 @@
           <el-col :span="12">
             <el-form-item label="指标池" prop="metricPool">
               <el-select v-model="formData.metricPool" clearable placeholder="请选择" style="width:100%">
-                <el-option label="国家级（POOL_NATIONAL）" value="POOL_NATIONAL" />
-                <el-option label="省级（POOL_PROVINCIAL）" value="POOL_PROVINCIAL" />
-                <el-option label="医院自定义（POOL_LOCAL）" value="POOL_LOCAL" />
+                <el-option label="国考指标池（POOL_NATIONAL）"  value="POOL_NATIONAL" />
+                <el-option label="等级评审指标池（POOL_GRADE）" value="POOL_GRADE" />
+                <el-option label="医院自定义（POOL_LOCAL）"     value="POOL_LOCAL" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -256,10 +256,10 @@
 
         <el-form-item label="业务方向">
           <el-checkbox-group v-model="formData.businessDirectionArr">
-            <el-checkbox value="INPATIENT">住院</el-checkbox>
-            <el-checkbox value="OUTPATIENT">门诊</el-checkbox>
-            <el-checkbox value="EMERGENCY">急诊</el-checkbox>
-            <el-checkbox value="SURGERY">手术</el-checkbox>
+            <el-checkbox label="INPATIENT">住院</el-checkbox>
+            <el-checkbox label="OUTPATIENT">门诊</el-checkbox>
+            <el-checkbox label="INSPECTION">检查/检验</el-checkbox>
+            <el-checkbox label="HOSPITAL">全院</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 
@@ -539,14 +539,14 @@ const parseRelatedItems = (items) => {
 }
 
 const metricPoolLabel = (v) => ({
-  POOL_NATIONAL:   '国家级',
-  POOL_PROVINCIAL: '省级',
-  POOL_LOCAL:      '医院自定义'
+  POOL_NATIONAL: '国考指标池',
+  POOL_GRADE:    '等级评审指标池',
+  POOL_LOCAL:    '医院自定义'
 }[v] || v)
 
 const businessDirLabel = (v) => {
   if (!v) return '-'
-  const map = { INPATIENT: '住院', OUTPATIENT: '门诊', EMERGENCY: '急诊', SURGERY: '手术' }
+  const map = { INPATIENT: '住院', OUTPATIENT: '门诊', INSPECTION: '检查/检验', HOSPITAL: '全院' }
   return v.split(',').map(s => map[s] || s).join(' / ')
 }
 
