@@ -11,7 +11,7 @@
                 <el-button type="success" size="small" @click="loadTree(true)" :loading="loading">
                   <el-icon><Refresh /></el-icon>刷新
                 </el-button>
-                <el-button type="primary" size="small" @click="openDialog()">
+                <el-button v-if="authStore.isAdmin" type="primary" size="small" @click="openDialog()">
                   <el-icon><Plus /></el-icon>新增
                 </el-button>
               </div>
@@ -56,10 +56,10 @@
             <div class="card-header">
               <span class="card-title">指标详情 — {{ selectedNode.metricName }}</span>
               <div style="display:flex;gap:6px">
-                <el-button type="warning" size="small" @click="openDialog(selectedNode)">
+                <el-button v-if="authStore.isAdmin" type="warning" size="small" @click="openDialog(selectedNode)">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteNode">
+                <el-button v-if="authStore.isAdmin" type="danger" size="small" @click="deleteNode">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
               </div>
@@ -321,6 +321,9 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { indicatorApi } from '@/api'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
 
 const loading        = ref(false)
 const treeData       = ref([])
@@ -353,7 +356,7 @@ const formData = reactive({
   isLeaf:                0,
   metricType:            'QUANTITATIVE',
   inputType:             'AUTO',
-  calculationType:       'EXPRESSION',
+  calculationType:       'NONE',
   expression:            '',
   relatedItemsInput:     '',   // 逗号分隔，提交前转 JSON 字符串
   unit:                  '',
@@ -387,6 +390,13 @@ const formRules = {
     validator: (rule, value, cb) => {
       if (formData.isLeaf === 1 && formData.inputType === 'AUTO' && !value?.trim())
         cb(new Error('自动采集必须填写计算表达式'))
+      else cb()
+    }, trigger: 'blur'
+  }],
+  relatedItemsInput: [{
+    validator: (rule, value, cb) => {
+      if (formData.isLeaf === 1 && formData.inputType === 'AUTO' && !value?.trim())
+        cb(new Error('自动采集必须填写至少一个依赖指标项编码'))
       else cb()
     }, trigger: 'blur'
   }]
@@ -427,7 +437,7 @@ const resetForm = () => {
   Object.assign(formData, {
     id: null, parentCode: '', metricCode: '', metricName: '',
     isLeaf: 0, metricType: 'QUANTITATIVE', inputType: 'AUTO',
-    calculationType: 'EXPRESSION', expression: '', relatedItemsInput: '',
+    calculationType: 'NONE', expression: '', relatedItemsInput: '',
     unit: '', metricPool: '', metricCategory: '', businessDirectionArr: [],
     targetValue: null, monitorDirection: '', supportDeptDrill: 0, sortOrder: 100, status: 1
   })
@@ -488,7 +498,6 @@ const submitForm = async () => {
 
     const payload = {
       parentCode:       formData.parentCode || null,
-      metricCode:       formData.metricCode,
       metricName:       formData.metricName,
       isLeaf:           formData.isLeaf,
       metricType:       formData.metricType,
@@ -512,8 +521,12 @@ const submitForm = async () => {
       status:           formData.status
     }
 
-    // 更新时带 id，不修改 metricCode
-    if (formData.id) payload.id = formData.id
+    // 更新时带 id，不传 metricCode（后端禁止更新编码）
+    if (formData.id) {
+      payload.id = formData.id
+    } else {
+      payload.metricCode = formData.metricCode
+    }
 
     const saveRes = await indicatorApi.save(payload)
     ElMessage.success(formData.id ? '更新成功' : '新增成功')
@@ -536,11 +549,12 @@ const submitForm = async () => {
   } catch (err) {
     const codeMap = {
       304095: '指标编码已存在，请更换编码',
-      304096: '存在子节点或状态冲突，无法完成操作',
+      304096: err.message || '层级或类型配置冲突，请检查父节点、指标池和计算类型设置',
       30403:  '仅超级管理员可维护指标',
-      30404:  '父级指标不存在'
+      30404:  '父级指标不存在',
+      30400:  err.message || '参数校验失败，请检查填写内容'
     }
-    ElMessage.error(codeMap[err.code] || err.message || '操作失败')
+    ElMessage.error(codeMap[err.code] ?? (err.message || '操作失败'))
   } finally { submitLoading.value = false }
 }
 
@@ -556,8 +570,12 @@ const deleteNode = () => {
       selectedNode.value = null
       await loadTree()
     } catch (err) {
-      const msg = err.code === 304096 ? '该指标存在子节点，请先删除子节点' : (err.message || '删除失败')
-      ElMessage.error(msg)
+      const deleteErrMap = {
+        304096: '该指标存在子节点，请先删除子节点',
+        30403:  '仅超级管理员可维护指标',
+        30404:  '指标不存在或已被删除'
+      }
+      ElMessage.error(deleteErrMap[err.code] ?? (err.message || '删除失败'))
     }
   }).catch(() => {})
 }
