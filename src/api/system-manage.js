@@ -2,13 +2,13 @@ import request from '@/utils/request'
 
 export const userManageApi = {
   getList(params) {
-    return request({ url: '/system/users', method: 'get', params })
+    return request({ url: '/system/user/list', method: 'get', params })
   },
   save(data) {
     return request({ url: '/system/user/save', method: 'post', data })
   },
   delete(userId) {
-    return request({ url: `/system/users/${userId}`, method: 'delete' })
+    return request({ url: `/system/user/${userId}`, method: 'delete' })
   }
 }
 
