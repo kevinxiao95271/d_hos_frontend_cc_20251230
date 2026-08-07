@@ -104,10 +104,46 @@
       <el-divider />
 
       <div v-if="testResult !== null">
-        <h3>执行结果</h3>
-        <div style="font-size: 32px; font-weight: 600; color: #409EFF; margin: 20px 0;">
-          {{ testResult }} <span style="font-size: 16px; color: #666;">{{ currentItem?.unit }}</span>
+        <h3 style="margin-bottom: 16px;">执行结果</h3>
+
+        <!-- 结果数值 -->
+        <el-card shadow="never" style="background: #f5f7fa; margin-bottom: 16px;">
+          <div style="display: flex; align-items: baseline; gap: 12px;">
+            <span style="font-size: 14px; color: #606266;">{{ testResult.result?.item_name || currentItem?.itemName }}</span>
+            <span style="font-size: 32px; font-weight: 600; color: #409EFF;">
+              {{ testResult.result?.result_value ?? testResult }}
+            </span>
+            <span style="font-size: 16px; color: #909399;">{{ testResult.result?.unit || currentItem?.unit || '' }}</span>
+          </div>
+        </el-card>
+
+        <!-- SQL语句 -->
+        <div v-if="testResult.querySql" style="margin-bottom: 16px;">
+          <div style="font-size: 14px; color: #606266; margin-bottom: 8px;">执行的 SQL：</div>
+          <el-input
+            :model-value="testResult.querySql"
+            type="textarea"
+            :rows="6"
+            readonly
+            style="font-family: 'Courier New', monospace; font-size: 12px;"
+          />
         </div>
+
+        <!-- 错误信息 -->
+        <el-alert
+          v-if="testResult.errorMessage"
+          type="error"
+          :title="testResult.errorMessage"
+          :closable="false"
+          style="margin-top: 16px;"
+        />
+
+        <!-- 原始响应（折叠） -->
+        <el-collapse style="margin-top: 16px;">
+          <el-collapse-item title="查看原始响应" name="raw">
+            <pre style="background: #f5f7fa; padding: 12px; border-radius: 4px; font-size: 12px; overflow-x: auto; margin: 0;">{{ JSON.stringify(testResult, null, 2) }}</pre>
+          </el-collapse-item>
+        </el-collapse>
       </div>
     </el-dialog>
 
