@@ -1,7 +1,7 @@
 <template>
   <div class="layout-container">
     <el-container>
-      <el-aside width="200px" class="layout-aside">
+      <el-aside width="220px" class="layout-aside">
         <div class="logo">
           <h1>{{ systemStore.hospitalName }}</h1>
         </div>
@@ -9,9 +9,9 @@
           :default-active="activeMenu"
           class="el-menu-vertical"
           router
-          background-color="#304156"
+          background-color="#1A5276"
           text-color="#bfcbd9"
-          active-text-color="#409EFF"
+          active-text-color="#3498DB"
         >
           <el-menu-item
             v-for="item in visibleMenuItems"
@@ -125,6 +125,8 @@ const handleCommand = async (command) => {
 </script>
 
 <style scoped lang="scss">
+@import '@/styles/variables.scss';
+
 .layout-container {
   height: 100vh;
   width: 100vw;
@@ -135,23 +137,23 @@ const handleCommand = async (command) => {
 }
 
 .layout-aside {
-  background-color: #304156;
+  background-color: var(--color-primary);
   overflow-x: hidden;
 
   .logo {
-    height: 60px;
+    height: var(--layout-header-height);
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #2b3a4a;
+    background-color: var(--color-hover);
 
     h1 {
-      font-size: 14px;
-      color: #fff;
-      font-weight: 600;
+      font-size: var(--font-size-body);
+      color: var(--color-bg-card);
+      font-weight: var(--font-weight-semibold);
       text-align: center;
       line-height: 1.4;
-      padding: 0 10px;
+      padding: 0 var(--spacing-md);
     }
   }
 
@@ -161,18 +163,19 @@ const handleCommand = async (command) => {
 }
 
 .layout-header {
-  background-color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background-color: var(--color-bg-card);
+  box-shadow: var(--shadow-level-1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 var(--spacing-xl);
+  height: var(--layout-header-height);
 
   .header-left {
     h2 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #333;
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
     }
   }
 
@@ -180,22 +183,22 @@ const handleCommand = async (command) => {
     .user-info {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--spacing-sm);
       cursor: pointer;
-      color: #333;
-      font-size: 14px;
+      color: var(--color-text-primary);
+      font-size: var(--font-size-body);
       outline: none;
 
       &:hover {
-        color: #409EFF;
+        color: var(--color-accent);
       }
     }
 
     .user-avatar {
-      background-color: #409EFF;
-      color: #fff;
+      background-color: var(--color-accent);
+      color: var(--color-bg-card);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
       flex-shrink: 0;
     }
 
@@ -209,7 +212,7 @@ const handleCommand = async (command) => {
 }
 
 .layout-main {
-  background-color: #f0f2f5;
+  background-color: var(--color-bg-page);
   padding: 0;
 }
 </style>

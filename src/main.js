@@ -7,6 +7,9 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 import App from './App.vue'
 import router from './router'
+// 引入设计标准样式（顺序很重要：variables → element-theme → index）
+import './styles/variables.scss'
+import './styles/element-theme.scss'
 import './styles/index.scss'
 
 const app = createApp(App)

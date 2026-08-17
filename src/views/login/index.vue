@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-header">
         <div class="login-logo">
-          <el-icon size="40" color="#409EFF"><DataAnalysis /></el-icon>
+          <el-icon size="40" :color="iconColor"><DataAnalysis /></el-icon>
         </div>
         <h1 class="login-title">高质量医疗指标管理系统</h1>
         <p class="login-subtitle">Hospital Quality Indicator Platform</p>
@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
@@ -70,6 +70,9 @@ const authStore = useAuthStore()
 const formRef = ref(null)
 const loading = ref(false)
 const errorMsg = ref('')
+
+// 使用设计标准的品牌辅色
+const iconColor = computed(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#3498DB')
 
 const form = reactive({
   username: '',
@@ -124,10 +127,12 @@ const handleLogin = async () => {
 </script>
 
 <style scoped lang="scss">
+@import '@/styles/variables.scss';
+
 .login-bg {
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 50%, #1a6b9a 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-hover) 50%, var(--color-accent) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,31 +140,31 @@ const handleLogin = async () => {
 
 .login-card {
   width: 420px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 48px 40px 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: var(--color-bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-4xl) var(--spacing-3xl) var(--spacing-3xl);
+  box-shadow: var(--shadow-level-4);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: var(--spacing-2xl);
 
   .login-logo {
-    margin-bottom: 16px;
+    margin-bottom: var(--spacing-base);
   }
 
   .login-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1a2a4a;
-    margin: 0 0 8px;
-    line-height: 1.3;
+    font-size: var(--font-size-h1);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    margin: 0 0 var(--spacing-sm);
+    line-height: var(--line-height-title);
   }
 
   .login-subtitle {
-    font-size: 12px;
-    color: #aaa;
+    font-size: var(--font-size-small);
+    color: var(--color-text-disabled);
     margin: 0;
     letter-spacing: 1px;
   }
@@ -167,14 +172,21 @@ const handleLogin = async () => {
 
 .login-form {
   :deep(.el-input__wrapper) {
-    border-radius: 8px;
+    border-radius: var(--border-radius-sm);
+  }
+
+  :deep(.el-button) {
+    border-radius: var(--border-radius-base);
+    height: 40px;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 2px;
   }
 }
 
 .login-error {
   text-align: center;
-  color: #f56c6c;
+  color: var(--color-danger);
   font-size: 13px;
-  margin: -8px 0 0;
+  margin: calc(var(--spacing-sm) * -1) 0 0;
 }
 </style>
