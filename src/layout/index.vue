@@ -125,8 +125,6 @@ const handleCommand = async (command) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
-
 .layout-container {
   height: 100vh;
   width: 100vw;

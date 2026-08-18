@@ -127,8 +127,6 @@ const handleLogin = async () => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
-
 .login-bg {
   height: 100vh;
   width: 100vw;
